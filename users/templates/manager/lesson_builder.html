@@ -1,0 +1,1590 @@
+{% extends "manager/base.html" %}
+
+{% block title %}{% if lesson %}Редактировать урок{% else %}Создать урок{% endif %}{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .builder-shell {
+        display: grid;
+        grid-template-columns: 260px 1fr;
+        gap: 18px;
+    }
+    .sidebar {
+        background: var(--card-bg);
+        border-radius: 18px;
+        border: 1px solid var(--card-border);
+        padding: 16px;
+        height: fit-content;
+        position: sticky;
+        top: 18px;
+    }
+    .sidebar h3 {
+        margin: 0 0 12px;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+    }
+    .block-btn {
+        width: 100%;
+        text-align: left;
+        border: 1px solid var(--card-border);
+        background: var(--nav-bg);
+        color: var(--nav-text);
+        padding: 10px 12px;
+        border-radius: 12px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+    .page-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    .page-tab {
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--card-border);
+        background: var(--nav-bg);
+        color: var(--nav-text);
+        cursor: pointer;
+        font-size: 13px;
+    }
+    .page-tab.active {
+        background: var(--nav-active-bg);
+        color: var(--nav-active-text);
+    }
+    .page-card {
+        background: var(--card-bg);
+        border-radius: 20px;
+        border: 1px solid var(--card-border);
+        padding: 18px;
+        min-height: 240px;
+    }
+    .editor-toolbar {
+        display: none;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px;
+        border-radius: 12px;
+        background: var(--nav-bg);
+        border: 1px solid var(--card-border);
+    }
+    .editor-toolbar.is-visible {
+        display: flex;
+        position: sticky;
+        top: 12px;
+        z-index: 5;
+    }
+    .page-card input,
+    .page-card textarea,
+    .page-card select {
+        color: var(--input-text);
+    }
+    .page-card select {
+        font-weight: 600;
+    }
+    .page-card input::placeholder,
+    .page-card textarea::placeholder {
+        color: var(--muted);
+    }
+    .editor-toolbar button {
+        border: none;
+        background: var(--input-bg);
+        color: var(--input-text);
+        padding: 6px 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+    .editor-toolbar input[type="color"] {
+        width: 40px;
+        height: 32px;
+        padding: 0;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+    }
+    .block {
+        border-radius: 14px;
+        border: 1px solid var(--card-border);
+        background: var(--card-bg);
+        padding: 14px;
+        margin-bottom: 12px;
+        position: relative;
+    }
+    .block-toolbar {
+        display: flex;
+        gap: 6px;
+        justify-content: flex-end;
+        margin-bottom: 8px;
+    }
+    .drag-handle {
+        border: none;
+        background: var(--nav-active-bg);
+        color: var(--nav-active-text);
+        padding: 4px 8px;
+        border-radius: 8px;
+        cursor: grab;
+        font-size: 12px;
+        margin-right: auto;
+    }
+    .block.dragging {
+        opacity: 0.6;
+    }
+    .block.drop-before {
+        border-top: 2px dashed #111;
+    }
+    .block.drop-after {
+        border-bottom: 2px dashed #111;
+    }
+    .block-toolbar button {
+        border: none;
+        background: var(--input-bg);
+        color: var(--input-text);
+        padding: 4px 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+    .editable {
+        min-height: 80px;
+        outline: none;
+        padding: 10px;
+        border-radius: 10px;
+        background: var(--input-bg);
+        border: 1px solid var(--card-border);
+        color: var(--input-text);
+    }
+    .block input[type="text"],
+    .block input[type="url"] {
+        width: 100%;
+    }
+    .block label {
+        margin-top: 8px;
+    }
+    .block-meta {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 6px;
+    }
+    .block-preview img {
+        max-width: 100%;
+        border-radius: 12px;
+        margin-top: 8px;
+    }
+    .block-preview video {
+        width: 100%;
+        margin-top: 8px;
+        border-radius: 12px;
+    }
+    .block-preview iframe {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        border: none;
+        border-radius: 12px;
+        margin-top: 8px;
+    }
+    .page-actions {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    .page-actions button {
+        border: none;
+        padding: 8px 12px;
+        border-radius: 10px;
+        background: var(--btn-bg);
+        color: var(--btn-text);
+        cursor: pointer;
+    }
+    .page-actions .secondary {
+        background: var(--btn-secondary-bg);
+        color: var(--btn-secondary-text);
+    }
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+    }
+    .notice {
+        color: var(--danger-text);
+        margin-bottom: 10px;
+    }
+    .question-builder {
+        margin-top: 10px;
+        padding: 12px;
+        border-radius: 12px;
+        background: var(--input-bg);
+        border: 1px solid var(--card-border);
+        display: grid;
+        gap: 10px;
+    }
+    .test-settings {
+        margin-top: 10px;
+        padding: 12px;
+        border-radius: 12px;
+        background: var(--input-bg);
+        border: 1px solid var(--card-border);
+        display: grid;
+        gap: 10px;
+    }
+    .test-settings .row {
+        margin-bottom: 0;
+    }
+    .test-settings label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--muted);
+    }
+    .question-form {
+        border-radius: 12px;
+        border: 1px solid var(--card-border);
+        background: var(--card-bg);
+        padding: 12px;
+        display: grid;
+        gap: 10px;
+    }
+    .question-form + .question-form {
+        margin-top: 10px;
+    }
+    .question-form-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        font-weight: 600;
+    }
+    .question-form-badge {
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        background: var(--btn-secondary-bg);
+        color: var(--btn-secondary-text);
+    }
+    .question-image {
+        display: grid;
+        gap: 8px;
+    }
+    .question-image img {
+        width: 100%;
+        max-height: 220px;
+        object-fit: cover;
+        border-radius: 12px;
+        border: 1px solid var(--card-border);
+    }
+    .question-image .remove-image {
+        align-self: flex-start;
+        padding: 6px 10px;
+        border-radius: 10px;
+        border: 1px solid var(--card-border);
+        background: var(--btn-secondary-bg);
+        color: var(--btn-secondary-text);
+        cursor: pointer;
+        font-size: 12px;
+    }
+    .saved-questions {
+        border-radius: 12px;
+        border: 1px solid var(--card-border);
+        background: var(--card-bg);
+        padding: 10px;
+        display: grid;
+        gap: 8px;
+    }
+    .saved-questions h4 {
+        margin: 0;
+        font-size: 13px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+    .saved-question {
+        border-radius: 10px;
+        border: 1px solid var(--card-border);
+        background: var(--input-bg);
+        padding: 8px 10px;
+    }
+    .saved-question .meta {
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--muted);
+    }
+    .question-builder .row,
+    .question-form .row,
+    .test-settings .row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+    .answer-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 80px 80px;
+        gap: 6px;
+        align-items: center;
+        margin-bottom: 6px;
+    }
+    .answer-row input {
+        min-width: 0;
+    }
+    .answer-row.pair-row {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 80px;
+    }
+    .answer-row.order-row {
+        grid-template-columns: minmax(0, 1fr) 80px 80px;
+    }
+    .editable,
+    .question-form textarea,
+    .question-form input[type="text"] {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+    .answer-row input[type="text"] {
+        width: 100%;
+    }
+    .answer-row button {
+        border: none;
+        background: var(--btn-secondary-bg);
+        color: var(--btn-secondary-text);
+        padding: 6px 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+    @media (max-width: 980px) {
+        .builder-shell {
+            grid-template-columns: 1fr;
+        }
+        .sidebar {
+            position: static;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>{% if lesson %}Редактировать урок{% else %}Создать урок{% endif %}</h1>
+    {% if error %}
+        <div class="notice">{{ error }}</div>
+    {% endif %}
+    <form method="post" id="lessonForm">
+        {% csrf_token %}
+        <div class="form-grid">
+            <div>
+                <label>Курс</label>
+                <select name="course" id="courseSelect" required>
+                    <option value="">—</option>
+                    {% for item in courses %}
+                        <option value="{{ item.id }}" {% if selected_course and selected_course.id == item.id %}selected{% endif %}{% if lesson and lesson.course_id == item.id %}selected{% endif %}>
+                            {{ item.title }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>Название урока</label>
+                <input type="text" name="title" value="{{ lesson.title|default_if_none:'' }}" required>
+            </div>
+            <div>
+                <label>Опубликован</label>
+                <label class="toggle">
+                    <input type="checkbox" name="is_published" {% if lesson and lesson.is_published %}checked{% endif %}>
+                    <span>Да</span>
+                </label>
+            </div>
+        </div>
+        <div style="margin-top:12px;">
+            <label>Описание</label>
+            <textarea name="description">{{ lesson.description|default_if_none:'' }}</textarea>
+        </div>
+        <div class="actions" style="margin-top:16px;">
+            <button type="button" class="saveLessonBtn">Сохранить урок</button>
+        </div>
+        <input type="hidden" name="pages_json" id="pagesInput">
+    </form>
+</div>
+
+<div class="builder-shell">
+    <div class="sidebar">
+        <h3>Информационные блоки</h3>
+        <button class="block-btn" data-block="text">Текст</button>
+        <button class="block-btn" data-block="instruction">Инструкция</button>
+        <button class="block-btn" data-block="image">Изображение</button>
+        <button class="block-btn" data-block="file">Документ</button>
+        <button class="block-btn" data-block="video">Видео</button>
+        <button class="block-btn" data-block="button">Кнопка</button>
+        <h3 style="margin-top:18px;">Задания и тесты</h3>
+        <button class="block-btn" data-block="test">Тест</button>
+    </div>
+    <div>
+        <div class="page-actions">
+            <button type="button" id="addPage">Добавить страницу</button>
+            <button type="button" class="secondary" id="removePage">Удалить страницу</button>
+            <button type="button" class="secondary saveLessonBtn">Сохранить урок</button>
+        </div>
+        <div class="page-tabs" id="pageTabs"></div>
+        <div class="page-card">
+            <div style="margin-bottom:12px;">
+                <label>Название страницы</label>
+                <input type="text" id="pageTitle" placeholder="Новая страница">
+            </div>
+            <div id="toolbarAnchor"></div>
+            <div class="editor-toolbar" id="formatToolbar" style="margin-bottom:12px;">
+                <button type="button" data-cmd="bold">Ж</button>
+                <button type="button" data-cmd="italic">К</button>
+                <button type="button" data-cmd="underline">Ч</button>
+                <button type="button" data-cmd="insertUnorderedList">Список</button>
+                <button type="button" data-cmd="formatBlock" data-value="h2">H2</button>
+                <button type="button" data-cmd="formatBlock" data-value="blockquote">Цитата</button>
+                <input type="color" data-cmd="foreColor" title="Цвет текста">
+                <input type="color" data-cmd="hiliteColor" title="Цвет фона">
+                <button type="button" data-link>Ссылка</button>
+                <button type="button" data-cmd="removeFormat">Очистить</button>
+            </div>
+            <div id="blocksRoot"></div>
+        </div>
+    </div>
+</div>
+
+{{ initial_pages|json_script:"lesson-pages" }}
+<script>
+    const testsData = [
+        {% for t in tests %}
+            {
+                id: {{ t.id }},
+                title: "{{ t.title|escapejs }}",
+                course_id: {{ t.course_id }},
+                description: "{{ t.description|default_if_none:''|escapejs }}",
+                due_date: "{{ t.due_date|date:'Y-m-d' }}",
+                attempts: {{ t.attempts|default:1 }},
+                passing_score: {{ t.passing_score|default:70 }},
+                warning_threshold: {{ t.warning_threshold|default:50 }},
+                success_threshold: {{ t.success_threshold|default:70 }},
+                retake_requires_new_attempt: {{ t.retake_requires_new_attempt|yesno:'true,false' }},
+                is_published: {{ t.is_published|yesno:'true,false' }},
+            },
+        {% endfor %}
+    ];
+    const csrftoken = (function () {
+        const name = 'csrftoken';
+        const cookies = document.cookie.split(';');
+        for (const cookie of cookies) {
+            const trimmed = cookie.trim();
+            if (trimmed.startsWith(name + '=')) {
+                return decodeURIComponent(trimmed.slice(name.length + 1));
+            }
+        }
+        return '';
+    })();
+    const uploadUrl = "{% url 'manager_lesson_asset_upload' %}";
+    const quickTestUrl = "{% url 'manager_test_quick_create' %}";
+    const quickQuestionUrl = "{% url 'manager_test_quick_question' %}";
+    const state = {
+        pages: [],
+        active: 0,
+    };
+    let dragIndex = null;
+
+    function getVideoEmbedUrl(url) {
+        if (!url) return '';
+        try {
+            const parsed = new URL(url);
+            const host = parsed.hostname.toLowerCase();
+            if (host.includes('youtu.be')) {
+                const id = parsed.pathname.replace('/', '');
+                return id ? `https://www.youtube.com/embed/${id}` : '';
+            }
+            if (host.includes('youtube.com')) {
+                const id = parsed.searchParams.get('v') || '';
+                if (id) return `https://www.youtube.com/embed/${id}`;
+                const parts = parsed.pathname.split('/').filter(Boolean);
+                if (parts[0] === 'embed' && parts[1]) {
+                    return `https://www.youtube.com/embed/${parts[1]}`;
+                }
+            }
+            if (host.includes('vimeo.com')) {
+                const parts = parsed.pathname.split('/').filter(Boolean);
+                const id = parts[0] && /^[0-9]+$/.test(parts[0]) ? parts[0] : '';
+                return id ? `https://player.vimeo.com/video/${id}` : '';
+            }
+        } catch (err) {
+            return '';
+        }
+        return '';
+    }
+
+    function ensureVideoEmbed(block) {
+        if (block.type !== 'video') return;
+        if (block.source === 'file') {
+            block.embed_url = '';
+            return;
+        }
+        const embed = getVideoEmbedUrl(block.url);
+        if (embed) block.embed_url = embed;
+    }
+
+    function clearDropHints() {
+        document.querySelectorAll('.block.drop-before, .block.drop-after').forEach((el) => {
+            el.classList.remove('drop-before', 'drop-after');
+        });
+    }
+
+    function moveBlock(fromIndex, toIndex) {
+        const page = state.pages[state.active];
+        if (!page) return;
+        if (fromIndex === toIndex) return;
+        if (toIndex < 0) toIndex = 0;
+        if (toIndex > page.blocks.length) toIndex = page.blocks.length;
+        const [item] = page.blocks.splice(fromIndex, 1);
+        if (toIndex > fromIndex) toIndex -= 1;
+        page.blocks.splice(toIndex, 0, item);
+        render();
+    }
+
+    function ensurePages() {
+        if (!state.pages.length) {
+            state.pages.push({ title: 'Новая страница', blocks: [] });
+        }
+    }
+
+    function loadInitialPages() {
+        const raw = document.getElementById('lesson-pages');
+        if (raw && raw.textContent) {
+            try {
+                const parsed = JSON.parse(raw.textContent);
+                if (Array.isArray(parsed) && parsed.length) {
+                    state.pages = parsed;
+                }
+            } catch (err) {
+                state.pages = [];
+            }
+        }
+        ensurePages();
+    }
+
+    function renderTabs() {
+        const tabs = document.getElementById('pageTabs');
+        tabs.innerHTML = '';
+        state.pages.forEach((page, idx) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'page-tab' + (idx === state.active ? ' active' : '');
+            btn.textContent = page.title || `Страница ${idx + 1}`;
+            btn.addEventListener('click', () => {
+                state.active = idx;
+                render();
+            });
+            tabs.appendChild(btn);
+        });
+    }
+
+    function createBlock(type) {
+        switch (type) {
+            case 'text':
+                return { type, html: '', accent: '#f3b6d2' };
+            case 'instruction':
+                return { type, html: '', accent: '#f6c453' };
+            case 'image':
+                return { type, url: '', name: '' };
+            case 'file':
+                return { type, url: '', name: '' };
+            case 'video':
+                return { type, url: '', name: '', source: 'url', embed_url: '' };
+            case 'button':
+                return { type, text: 'Кнопка', url: '' };
+            case 'test':
+                return { type, test_id: null, title: '' };
+            default:
+                return { type: 'text', html: '' };
+        }
+    }
+
+    function renderBlocks() {
+        const root = document.getElementById('blocksRoot');
+        root.innerHTML = '';
+        const page = state.pages[state.active];
+        if (!page) return;
+        page.blocks.forEach((block, idx) => {
+            const wrap = document.createElement('div');
+            wrap.className = 'block';
+            wrap.dataset.index = idx;
+
+            wrap.addEventListener('dragover', (event) => {
+                if (dragIndex === null) return;
+                event.preventDefault();
+                const rect = wrap.getBoundingClientRect();
+                const isAfter = (event.clientY - rect.top) > rect.height / 2;
+                clearDropHints();
+                wrap.classList.add(isAfter ? 'drop-after' : 'drop-before');
+            });
+            wrap.addEventListener('dragleave', () => {
+                wrap.classList.remove('drop-before', 'drop-after');
+            });
+            wrap.addEventListener('drop', (event) => {
+                if (dragIndex === null) return;
+                event.preventDefault();
+                const rect = wrap.getBoundingClientRect();
+                const isAfter = (event.clientY - rect.top) > rect.height / 2;
+                const targetIndex = Number(wrap.dataset.index || 0);
+                const insertIndex = targetIndex + (isAfter ? 1 : 0);
+                clearDropHints();
+                moveBlock(dragIndex, insertIndex);
+                dragIndex = null;
+            });
+
+            const toolbar = document.createElement('div');
+            toolbar.className = 'block-toolbar';
+            const drag = document.createElement('button');
+            drag.type = 'button';
+            drag.className = 'drag-handle';
+            drag.textContent = '⋮⋮';
+            drag.title = 'Перетащить блок';
+            drag.draggable = true;
+            drag.addEventListener('dragstart', (event) => {
+                dragIndex = idx;
+                wrap.classList.add('dragging');
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', String(idx));
+            });
+            drag.addEventListener('dragend', () => {
+                dragIndex = null;
+                wrap.classList.remove('dragging');
+                clearDropHints();
+            });
+            const up = document.createElement('button');
+            up.type = 'button';
+            up.textContent = '↑';
+            up.addEventListener('click', () => {
+                if (idx === 0) return;
+                const prev = page.blocks[idx - 1];
+                page.blocks[idx - 1] = block;
+                page.blocks[idx] = prev;
+                render();
+            });
+            const down = document.createElement('button');
+            down.type = 'button';
+            down.textContent = '↓';
+            down.addEventListener('click', () => {
+                if (idx === page.blocks.length - 1) return;
+                const next = page.blocks[idx + 1];
+                page.blocks[idx + 1] = block;
+                page.blocks[idx] = next;
+                render();
+            });
+            const del = document.createElement('button');
+            del.type = 'button';
+            del.textContent = 'Удалить';
+            del.addEventListener('click', () => {
+                page.blocks.splice(idx, 1);
+                render();
+            });
+            toolbar.appendChild(drag);
+            toolbar.appendChild(up);
+            toolbar.appendChild(down);
+            toolbar.appendChild(del);
+            wrap.appendChild(toolbar);
+
+            if (block.type === 'video') {
+                ensureVideoEmbed(block);
+            }
+
+            if (block.type === 'text' || block.type === 'instruction') {
+                const editable = document.createElement('div');
+                editable.className = 'editable';
+                editable.contentEditable = 'true';
+                editable.innerHTML = block.html || '';
+                editable.addEventListener('input', () => {
+                    block.html = editable.innerHTML;
+                });
+                const color = document.createElement('input');
+                color.type = 'color';
+                color.value = block.accent || '#f3b6d2';
+                color.addEventListener('input', () => {
+                    block.accent = color.value;
+                    wrap.style.borderLeft = `6px solid ${block.accent}`;
+                });
+                const label = document.createElement('label');
+                label.textContent = 'Акцентный цвет';
+                wrap.appendChild(label);
+                wrap.appendChild(color);
+                wrap.appendChild(editable);
+                wrap.style.borderLeft = `6px solid ${block.accent || '#f3b6d2'}`;
+            }
+
+            if (block.type === 'image' || block.type === 'file' || block.type === 'video') {
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                const isImage = block.type === 'image';
+                if (isImage) fileInput.accept = 'image/*';
+                const isVideo = block.type === 'video';
+                if (isVideo) fileInput.accept = 'video/*';
+                fileInput.addEventListener('change', async () => {
+                    if (!fileInput.files.length) return;
+                    const form = new FormData();
+                    form.append('file', fileInput.files[0]);
+                    form.append('asset_type', isImage ? 'IMAGE' : isVideo ? 'VIDEO' : 'FILE');
+                    const response = await fetch(uploadUrl, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': csrftoken },
+                        body: form,
+                    });
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok) {
+                        alert(data.error || 'Не удалось загрузить файл.');
+                        return;
+                    }
+                    block.url = data.url;
+                    block.name = data.name;
+                    if (isVideo) {
+                        block.source = 'file';
+                        block.embed_url = '';
+                    }
+                    render();
+                });
+                wrap.appendChild(fileInput);
+
+                if (block.type === 'video') {
+                    const urlInput = document.createElement('input');
+                    urlInput.type = 'url';
+                    urlInput.placeholder = 'Ссылка на видео (YouTube/Vimeo)';
+                    urlInput.value = block.url || '';
+                    urlInput.addEventListener('input', () => {
+                        block.url = urlInput.value;
+                        block.source = 'url';
+                        block.embed_url = getVideoEmbedUrl(block.url);
+                    });
+                    wrap.appendChild(urlInput);
+                }
+
+                const preview = document.createElement('div');
+                preview.className = 'block-preview';
+                if (block.url) {
+                    if (block.type === 'image') {
+                        const img = document.createElement('img');
+                        img.src = block.url;
+                        preview.appendChild(img);
+                    } else if (block.type === 'video') {
+                        if (block.source === 'file') {
+                            const vid = document.createElement('video');
+                            vid.src = block.url;
+                            vid.controls = true;
+                            preview.appendChild(vid);
+                        } else if (block.embed_url) {
+                            const iframe = document.createElement('iframe');
+                            iframe.src = block.embed_url;
+                            iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+                            iframe.allowFullscreen = true;
+                            preview.appendChild(iframe);
+                        } else {
+                            const link = document.createElement('a');
+                            link.href = block.url;
+                            link.textContent = block.url;
+                            link.target = '_blank';
+                            preview.appendChild(link);
+                        }
+                    } else {
+                        const link = document.createElement('a');
+                        link.href = block.url;
+                        link.textContent = block.name || block.url;
+                        link.target = '_blank';
+                        preview.appendChild(link);
+                    }
+                }
+                wrap.appendChild(preview);
+            }
+
+            if (block.type === 'button') {
+                const text = document.createElement('input');
+                text.type = 'text';
+                text.value = block.text || '';
+                text.placeholder = 'Текст кнопки';
+                text.addEventListener('input', () => block.text = text.value);
+                const url = document.createElement('input');
+                url.type = 'url';
+                url.value = block.url || '';
+                url.placeholder = 'Ссылка';
+                url.addEventListener('input', () => block.url = url.value);
+                wrap.appendChild(text);
+                wrap.appendChild(url);
+            }
+
+            if (block.type === 'test') {
+                const typeLabels = {
+                    SINGLE: 'Один вариант',
+                    MULTI: 'Несколько вариантов',
+                    MATCHING: 'Сопоставление',
+                    ORDERING: 'Последовательность',
+                    SHORT: 'Краткий ответ',
+                    LONG: 'Развернутый ответ',
+                };
+                const select = document.createElement('select');
+                const blank = document.createElement('option');
+                blank.value = '';
+                blank.textContent = 'Выберите тест (необязательно)';
+                select.appendChild(blank);
+                const selectedCourse = Number(document.getElementById('courseSelect').value || 0);
+                const availableTests = testsData.filter((t) => !selectedCourse || t.course_id === selectedCourse);
+                availableTests.forEach((t) => {
+                    const opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.textContent = t.title;
+                    if (block.test_id === t.id) opt.selected = true;
+                    select.appendChild(opt);
+                });
+                select.addEventListener('change', () => {
+                    const id = parseInt(select.value, 10);
+                    block.test_id = Number.isFinite(id) ? id : null;
+                    const found = testsData.find((t) => t.id === block.test_id);
+                    block.title = found ? found.title : '';
+                    block.test_settings = found
+                        ? {
+                            title: found.title,
+                            description: found.description || '',
+                            due_date: found.due_date || '',
+                            attempts: found.attempts || 1,
+                            passing_score: found.passing_score || 70,
+                            warning_threshold: found.warning_threshold || 50,
+                            success_threshold: found.success_threshold || 70,
+                            retake_requires_new_attempt: found.retake_requires_new_attempt !== false,
+                            is_published: !!found.is_published,
+                        }
+                        : null;
+                    render();
+                });
+                wrap.appendChild(select);
+
+                const selectedTest = block.test_id ? testsData.find((t) => t.id === block.test_id) : null;
+                const defaults = {
+                    title: '',
+                    description: '',
+                    due_date: '',
+                    attempts: 1,
+                    passing_score: 70,
+                    warning_threshold: 50,
+                    success_threshold: 70,
+                    retake_requires_new_attempt: true,
+                    is_published: false,
+                };
+                const currentSettings = block.test_settings || (selectedTest ? {
+                    title: selectedTest.title,
+                    description: selectedTest.description || '',
+                    due_date: selectedTest.due_date || '',
+                    attempts: selectedTest.attempts || 1,
+                    passing_score: selectedTest.passing_score || 70,
+                    warning_threshold: selectedTest.warning_threshold || 50,
+                    success_threshold: selectedTest.success_threshold || 70,
+                    retake_requires_new_attempt: selectedTest.retake_requires_new_attempt !== false,
+                    is_published: !!selectedTest.is_published,
+                } : defaults);
+                block.test_settings = currentSettings;
+
+                const settingsBox = document.createElement('div');
+                settingsBox.className = 'test-settings';
+                const settingsTitle = document.createElement('div');
+                settingsTitle.style.fontWeight = '600';
+                settingsTitle.textContent = 'Настройки теста';
+                settingsBox.appendChild(settingsTitle);
+
+                const titleInput = document.createElement('input');
+                titleInput.type = 'text';
+                titleInput.placeholder = 'Название теста';
+                titleInput.value = currentSettings.title || '';
+                const descInput = document.createElement('textarea');
+                descInput.placeholder = 'Описание теста';
+                descInput.rows = 2;
+                descInput.value = currentSettings.description || '';
+                const dueInput = document.createElement('input');
+                dueInput.type = 'date';
+                dueInput.value = currentSettings.due_date || '';
+                const attemptsInput = document.createElement('input');
+                attemptsInput.type = 'number';
+                attemptsInput.min = '1';
+                attemptsInput.placeholder = 'Попытки';
+                attemptsInput.value = currentSettings.attempts || 1;
+                const passingInput = document.createElement('input');
+                passingInput.type = 'number';
+                passingInput.min = '0';
+                passingInput.max = '100';
+                passingInput.placeholder = 'Проходной балл (%)';
+                passingInput.value = currentSettings.passing_score || 70;
+                const warningInput = document.createElement('input');
+                warningInput.type = 'number';
+                warningInput.min = '0';
+                warningInput.max = '100';
+                warningInput.placeholder = 'Порог желтый (%)';
+                warningInput.value = currentSettings.warning_threshold || 50;
+                const successInput = document.createElement('input');
+                successInput.type = 'number';
+                successInput.min = '0';
+                successInput.max = '100';
+                successInput.placeholder = 'Порог зеленый (%)';
+                successInput.value = currentSettings.success_threshold || 70;
+                const retakeLabel = document.createElement('label');
+                retakeLabel.className = 'toggle';
+                const retakeInput = document.createElement('input');
+                retakeInput.type = 'checkbox';
+                retakeInput.checked = currentSettings.retake_requires_new_attempt !== false;
+                retakeLabel.appendChild(retakeInput);
+                const retakeText = document.createElement('span');
+                retakeText.textContent = 'Пересдача тратит попытку';
+                retakeLabel.appendChild(retakeText);
+                const publishLabel = document.createElement('label');
+                publishLabel.className = 'toggle';
+                const publishInput = document.createElement('input');
+                publishInput.type = 'checkbox';
+                publishInput.checked = !!currentSettings.is_published;
+                publishLabel.appendChild(publishInput);
+                const publishText = document.createElement('span');
+                publishText.textContent = 'Опубликовать тест';
+                publishLabel.appendChild(publishText);
+
+                function syncSettings() {
+                    currentSettings.title = titleInput.value.trim();
+                    currentSettings.description = descInput.value.trim();
+                    currentSettings.due_date = dueInput.value || '';
+                    currentSettings.attempts = parseInt(attemptsInput.value, 10) || 1;
+                    currentSettings.passing_score = parseInt(passingInput.value, 10) || 70;
+                    currentSettings.warning_threshold = parseInt(warningInput.value, 10) || 50;
+                    currentSettings.success_threshold = parseInt(successInput.value, 10) || 70;
+                    currentSettings.retake_requires_new_attempt = retakeInput.checked;
+                    currentSettings.is_published = publishInput.checked;
+                    block.test_settings = currentSettings;
+                }
+
+                [titleInput, descInput, dueInput, attemptsInput, passingInput, warningInput, successInput].forEach((input) => {
+                    input.addEventListener('input', syncSettings);
+                });
+                [retakeInput, publishInput].forEach((input) => {
+                    input.addEventListener('change', syncSettings);
+                });
+
+                settingsBox.appendChild(titleInput);
+                settingsBox.appendChild(descInput);
+                const settingsRow = document.createElement('div');
+                settingsRow.className = 'row';
+                settingsRow.appendChild(dueInput);
+                settingsRow.appendChild(attemptsInput);
+                settingsRow.appendChild(passingInput);
+                settingsRow.appendChild(warningInput);
+                settingsRow.appendChild(successInput);
+                settingsBox.appendChild(settingsRow);
+                settingsBox.appendChild(retakeLabel);
+                settingsBox.appendChild(publishLabel);
+
+                async function createOrVersionTest() {
+                    const courseId = document.getElementById('courseSelect').value;
+                    if (!courseId) {
+                        alert('Сначала выберите курс.');
+                        return null;
+                    }
+                    syncSettings();
+                    const title = currentSettings.title || '';
+                    if (!title) {
+                        alert('Введите название теста.');
+                        return null;
+                    }
+                    const payload = {
+                        title,
+                        course: Number(courseId),
+                        description: currentSettings.description || '',
+                        due_date: currentSettings.due_date || null,
+                        attempts: currentSettings.attempts || 1,
+                        passing_score: currentSettings.passing_score || 70,
+                        warning_threshold: currentSettings.warning_threshold || 50,
+                        success_threshold: currentSettings.success_threshold || 70,
+                        retake_requires_new_attempt: currentSettings.retake_requires_new_attempt,
+                        is_published: currentSettings.is_published,
+                        source_test_id: block.test_id || null,
+                    };
+                    const response = await fetch(quickTestUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                        body: JSON.stringify(payload),
+                    });
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok) {
+                        alert(data.error || 'Не удалось создать тест.');
+                        return null;
+                    }
+                    testsData.push({
+                        id: data.id,
+                        title: data.title,
+                        course_id: Number(courseId),
+                        description: currentSettings.description || '',
+                        due_date: currentSettings.due_date || '',
+                        attempts: currentSettings.attempts || 1,
+                        passing_score: currentSettings.passing_score || 70,
+                        warning_threshold: currentSettings.warning_threshold || 50,
+                        success_threshold: currentSettings.success_threshold || 70,
+                        retake_requires_new_attempt: currentSettings.retake_requires_new_attempt,
+                        is_published: currentSettings.is_published,
+                    });
+                    block.test_id = data.id;
+                    block.title = data.title;
+                    block.test_settings = { ...currentSettings, title: data.title };
+                    render();
+                    return data.id;
+                }
+
+                const createBtn = document.createElement('button');
+                createBtn.type = 'button';
+                createBtn.textContent = block.test_id ? 'Создать новую версию' : 'Создать тест';
+                createBtn.addEventListener('click', async () => {
+                    await createOrVersionTest();
+                });
+                settingsBox.appendChild(createBtn);
+                wrap.appendChild(settingsBox);
+
+                function makeBlankForm() {
+                    return {
+                        id: null,
+                        type: 'SINGLE',
+                        text: '',
+                        points: 1,
+                        image_url: '',
+                        image_file: null,
+                        image_remove: false,
+                        answers: [
+                            { text: '', is_correct: true },
+                            { text: '', is_correct: false },
+                        ],
+                        pairs: [
+                            { left_text: '', right_text: '' },
+                            { left_text: '', right_text: '' },
+                        ],
+                        ordering: [
+                            { text: '' },
+                            { text: '' },
+                        ],
+                    };
+                }
+
+                const questionBox = document.createElement('div');
+                questionBox.className = 'question-builder';
+                const questionTitle = document.createElement('div');
+                questionTitle.style.fontWeight = '600';
+                questionTitle.textContent = 'Вопросы';
+                questionBox.appendChild(questionTitle);
+
+                const forms = block.question_forms || [];
+                if (!forms.length) forms.push(makeBlankForm());
+                block.question_forms = forms;
+
+                forms.forEach((form, formIndex) => {
+                    if (!form.type) form.type = 'SINGLE';
+                    if (!form.points) form.points = 1;
+                    if (form.image_url === undefined) form.image_url = '';
+                    if (form.image_file === undefined) form.image_file = null;
+                    if (form.image_remove === undefined) form.image_remove = false;
+                    if (form.type === 'SINGLE' || form.type === 'MULTI') {
+                        if (!form.answers || form.answers.length < 2) {
+                            form.answers = [
+                                { text: '', is_correct: true },
+                                { text: '', is_correct: false },
+                            ];
+                        }
+                    } else if (form.type === 'MATCHING') {
+                        if (!form.pairs || form.pairs.length < 2) {
+                            form.pairs = [
+                                { left_text: '', right_text: '' },
+                                { left_text: '', right_text: '' },
+                            ];
+                        }
+                    } else if (form.type === 'ORDERING') {
+                        if (!form.ordering || form.ordering.length < 2) {
+                            form.ordering = [
+                                { text: '' },
+                                { text: '' },
+                            ];
+                        }
+                    } else {
+                        form.answers = [];
+                    }
+
+                    const formCard = document.createElement('div');
+                    formCard.className = 'question-form';
+                    const header = document.createElement('div');
+                    header.className = 'question-form-header';
+                    const headerTitle = document.createElement('div');
+                    headerTitle.textContent = `Вопрос ${formIndex + 1}`;
+                    header.appendChild(headerTitle);
+                    if (form.id) {
+                        const badge = document.createElement('div');
+                        badge.className = 'question-form-badge';
+                        badge.textContent = 'Сохранено';
+                        header.appendChild(badge);
+                    }
+                    formCard.appendChild(header);
+
+                    const row = document.createElement('div');
+                    row.className = 'row';
+                    const typeSelect = document.createElement('select');
+                    [
+                        { value: 'SINGLE', label: 'Один вариант' },
+                        { value: 'MULTI', label: 'Несколько вариантов' },
+                        { value: 'MATCHING', label: 'Сопоставление' },
+                        { value: 'ORDERING', label: 'Последовательность' },
+                        { value: 'SHORT', label: 'Краткий ответ' },
+                        { value: 'LONG', label: 'Развернутый ответ' },
+                    ].forEach((opt) => {
+                        const item = document.createElement('option');
+                        item.value = opt.value;
+                        item.textContent = opt.label;
+                        if (form.type === opt.value) item.selected = true;
+                        typeSelect.appendChild(item);
+                    });
+                    typeSelect.addEventListener('change', () => {
+                        form.type = typeSelect.value;
+                        render();
+                    });
+                    const pointsInput = document.createElement('input');
+                    pointsInput.type = 'number';
+                    pointsInput.min = '1';
+                    pointsInput.value = form.points || 1;
+                    pointsInput.placeholder = 'Баллы';
+                    pointsInput.addEventListener('input', () => {
+                        const value = parseInt(pointsInput.value, 10);
+                        form.points = Number.isFinite(value) ? value : 1;
+                    });
+                    row.appendChild(typeSelect);
+                    row.appendChild(pointsInput);
+                    formCard.appendChild(row);
+
+                    const textArea = document.createElement('textarea');
+                    textArea.placeholder = 'Текст вопроса';
+                    textArea.value = form.text || '';
+                    textArea.rows = 3;
+                    textArea.addEventListener('input', () => {
+                        form.text = textArea.value;
+                    });
+                    formCard.appendChild(textArea);
+
+                    const imageWrap = document.createElement('div');
+                    imageWrap.className = 'question-image';
+                    const imageLabel = document.createElement('label');
+                    imageLabel.textContent = 'Изображение вопроса';
+                    const imageInput = document.createElement('input');
+                    imageInput.type = 'file';
+                    imageInput.accept = 'image/*';
+                    imageInput.addEventListener('change', () => {
+                        form.image_file = imageInput.files && imageInput.files[0] ? imageInput.files[0] : null;
+                        if (form.image_file) {
+                            form.image_remove = false;
+                        }
+                    });
+                    imageWrap.appendChild(imageLabel);
+                    imageWrap.appendChild(imageInput);
+                    if (form.image_url) {
+                        const img = document.createElement('img');
+                        img.src = form.image_url;
+                        imageWrap.appendChild(img);
+                        const removeImg = document.createElement('button');
+                        removeImg.type = 'button';
+                        removeImg.className = 'remove-image';
+                        removeImg.textContent = 'Удалить изображение';
+                        removeImg.addEventListener('click', () => {
+                            form.image_url = '';
+                            form.image_file = null;
+                            form.image_remove = true;
+                            render();
+                        });
+                        imageWrap.appendChild(removeImg);
+                    }
+                    formCard.appendChild(imageWrap);
+
+                    if (form.type === 'SINGLE' || form.type === 'MULTI') {
+                        const answersWrap = document.createElement('div');
+                        form.answers = form.answers || [];
+                        form.answers.forEach((answer, answerIdx) => {
+                            const answerRow = document.createElement('div');
+                            answerRow.className = 'answer-row';
+                            const answerInput = document.createElement('input');
+                            answerInput.type = 'text';
+                            answerInput.placeholder = `Вариант ${answerIdx + 1}`;
+                            answerInput.value = answer.text || '';
+                            answerInput.addEventListener('input', () => {
+                                answer.text = answerInput.value;
+                            });
+                            const correctInput = document.createElement('input');
+                            correctInput.type = form.type === 'SINGLE' ? 'radio' : 'checkbox';
+                            correctInput.name = `correct_${idx}_${formIndex}`;
+                            correctInput.checked = !!answer.is_correct;
+                            correctInput.addEventListener('change', () => {
+                                if (form.type === 'SINGLE') {
+                                    form.answers.forEach((item) => {
+                                        item.is_correct = false;
+                                    });
+                                    answer.is_correct = true;
+                                    render();
+                                } else {
+                                    answer.is_correct = correctInput.checked;
+                                }
+                            });
+                            const removeBtn = document.createElement('button');
+                            removeBtn.type = 'button';
+                            removeBtn.textContent = 'Удалить';
+                            removeBtn.addEventListener('click', () => {
+                                form.answers.splice(answerIdx, 1);
+                                render();
+                            });
+                            answerRow.appendChild(answerInput);
+                            answerRow.appendChild(correctInput);
+                            answerRow.appendChild(removeBtn);
+                            answersWrap.appendChild(answerRow);
+                        });
+                        const addAnswer = document.createElement('button');
+                        addAnswer.type = 'button';
+                        addAnswer.textContent = 'Добавить вариант';
+                        addAnswer.addEventListener('click', () => {
+                            form.answers.push({ text: '', is_correct: false });
+                            render();
+                        });
+                        formCard.appendChild(answersWrap);
+                        formCard.appendChild(addAnswer);
+                    }
+                    if (form.type === 'MATCHING') {
+                        const pairsWrap = document.createElement('div');
+                        form.pairs = form.pairs || [];
+                        form.pairs.forEach((pair, pairIdx) => {
+                            const pairRow = document.createElement('div');
+                            pairRow.className = 'answer-row pair-row';
+                            const leftInput = document.createElement('input');
+                            leftInput.type = 'text';
+                            leftInput.placeholder = `Левая часть ${pairIdx + 1}`;
+                            leftInput.value = pair.left_text || '';
+                            leftInput.addEventListener('input', () => {
+                                pair.left_text = leftInput.value;
+                            });
+                            const rightInput = document.createElement('input');
+                            rightInput.type = 'text';
+                            rightInput.placeholder = `Правая часть ${pairIdx + 1}`;
+                            rightInput.value = pair.right_text || '';
+                            rightInput.addEventListener('input', () => {
+                                pair.right_text = rightInput.value;
+                            });
+                            const removeBtn = document.createElement('button');
+                            removeBtn.type = 'button';
+                            removeBtn.textContent = 'Удалить';
+                            removeBtn.addEventListener('click', () => {
+                                form.pairs.splice(pairIdx, 1);
+                                render();
+                            });
+                            pairRow.appendChild(leftInput);
+                            pairRow.appendChild(rightInput);
+                            pairRow.appendChild(removeBtn);
+                            pairsWrap.appendChild(pairRow);
+                        });
+                        const addPair = document.createElement('button');
+                        addPair.type = 'button';
+                        addPair.textContent = 'Добавить пару';
+                        addPair.addEventListener('click', () => {
+                            form.pairs.push({ left_text: '', right_text: '' });
+                            render();
+                        });
+                        formCard.appendChild(pairsWrap);
+                        formCard.appendChild(addPair);
+                    }
+                    if (form.type === 'ORDERING') {
+                        const orderWrap = document.createElement('div');
+                        form.ordering = form.ordering || [];
+                        form.ordering.forEach((item, itemIdx) => {
+                            const itemRow = document.createElement('div');
+                            itemRow.className = 'answer-row order-row';
+                            const itemInput = document.createElement('input');
+                            itemInput.type = 'text';
+                            itemInput.placeholder = `Элемент ${itemIdx + 1}`;
+                            itemInput.value = item.text || '';
+                            itemInput.addEventListener('input', () => {
+                                item.text = itemInput.value;
+                            });
+                            const stub = document.createElement('span');
+                            stub.textContent = '';
+                            const removeBtn = document.createElement('button');
+                            removeBtn.type = 'button';
+                            removeBtn.textContent = 'Удалить';
+                            removeBtn.addEventListener('click', () => {
+                                form.ordering.splice(itemIdx, 1);
+                                render();
+                            });
+                            itemRow.appendChild(itemInput);
+                            itemRow.appendChild(stub);
+                            itemRow.appendChild(removeBtn);
+                            orderWrap.appendChild(itemRow);
+                        });
+                        const addItem = document.createElement('button');
+                        addItem.type = 'button';
+                        addItem.textContent = 'Добавить элемент';
+                        addItem.addEventListener('click', () => {
+                            form.ordering.push({ text: '' });
+                            render();
+                        });
+                        formCard.appendChild(orderWrap);
+                        formCard.appendChild(addItem);
+                    }
+
+                    const saveQuestion = document.createElement('button');
+                    saveQuestion.type = 'button';
+                    saveQuestion.textContent = form.id ? 'Обновить вопрос' : 'Сохранить вопрос';
+                    saveQuestion.addEventListener('click', async () => {
+                        if (!form.text || !form.text.trim()) {
+                            alert('Введите текст вопроса.');
+                            return;
+                        }
+                        if (typeof syncSettings === 'function') {
+                            syncSettings();
+                        }
+                        if (!block.test_id) {
+                            const createdId = await createOrVersionTest();
+                            if (!createdId) return;
+                        }
+                        const wasNew = !form.id;
+                        const payload = new FormData();
+                        payload.append('test_id', block.test_id);
+                        if (form.id) payload.append('question_id', form.id);
+                        payload.append('type', form.type);
+                        payload.append('text', form.text);
+                        payload.append('points', String(form.points || 1));
+                        payload.append('answers', JSON.stringify(form.type === 'SINGLE' || form.type === 'MULTI' ? form.answers : []));
+                        payload.append('pairs', JSON.stringify(form.type === 'MATCHING' ? form.pairs : []));
+                        payload.append('ordering', JSON.stringify(form.type === 'ORDERING' ? form.ordering : []));
+                        payload.append('test_settings', JSON.stringify(block.test_settings || {}));
+                        if (form.image_file) {
+                            payload.append('image', form.image_file);
+                        }
+                        if (form.image_remove) {
+                            payload.append('image_remove', '1');
+                        }
+                        const response = await fetch(quickQuestionUrl, {
+                            method: 'POST',
+                            headers: { 'X-CSRFToken': csrftoken },
+                            body: payload,
+                        });
+                        const data = await response.json().catch(() => ({}));
+                        if (!response.ok) {
+                            alert(data.error || 'Не удалось сохранить вопрос.');
+                            return;
+                        }
+                        if (data.test_id && data.test_id !== block.test_id) {
+                            const courseId = Number(document.getElementById('courseSelect').value || 0);
+                            const existing = testsData.find((t) => t.id === data.test_id);
+                            if (!existing) {
+                                testsData.push({
+                                    id: data.test_id,
+                                    title: data.test_title || (block.test_settings ? block.test_settings.title : ''),
+                                    course_id: courseId,
+                                    description: block.test_settings ? (block.test_settings.description || '') : '',
+                                    due_date: block.test_settings ? (block.test_settings.due_date || '') : '',
+                                    attempts: block.test_settings ? (block.test_settings.attempts || 1) : 1,
+                                    passing_score: block.test_settings ? (block.test_settings.passing_score || 70) : 70,
+                                    warning_threshold: block.test_settings ? (block.test_settings.warning_threshold || 50) : 50,
+                                    success_threshold: block.test_settings ? (block.test_settings.success_threshold || 70) : 70,
+                                    retake_requires_new_attempt: block.test_settings ? !!block.test_settings.retake_requires_new_attempt : true,
+                                    is_published: block.test_settings ? !!block.test_settings.is_published : false,
+                                });
+                            }
+                            const map = data.question_map || {};
+                            block.question_forms.forEach((qf) => {
+                                if (qf.id && map[qf.id]) {
+                                    qf.id = map[qf.id];
+                                }
+                            });
+                            block.test_id = data.test_id;
+                            block.title = data.test_title || block.title;
+                            if (block.test_settings) {
+                                block.test_settings.title = block.title;
+                            }
+                        } else {
+                            const existing = testsData.find((t) => t.id === block.test_id);
+                            if (existing && block.test_settings) {
+                                Object.assign(existing, {
+                                    title: block.test_settings.title || existing.title,
+                                    description: block.test_settings.description || '',
+                                    due_date: block.test_settings.due_date || '',
+                                    attempts: block.test_settings.attempts || 1,
+                                    passing_score: block.test_settings.passing_score || 70,
+                                    warning_threshold: block.test_settings.warning_threshold || 50,
+                                    success_threshold: block.test_settings.success_threshold || 70,
+                                    retake_requires_new_attempt: !!block.test_settings.retake_requires_new_attempt,
+                                    is_published: !!block.test_settings.is_published,
+                                });
+                            }
+                        }
+                        form.id = data.id;
+                        form.saved = true;
+                        if (data.image_url !== undefined) {
+                            form.image_url = data.image_url || '';
+                            form.image_file = null;
+                            form.image_remove = false;
+                        }
+                        if (wasNew && formIndex === forms.length - 1) {
+                            forms.push(makeBlankForm());
+                        }
+                        render();
+                    });
+                    formCard.appendChild(saveQuestion);
+                    questionBox.appendChild(formCard);
+                });
+
+                wrap.appendChild(questionBox);
+
+                if (block.test_id) {
+                    const hint = document.createElement('div');
+                    hint.className = 'block-meta';
+                    hint.textContent = 'Вопросы сохраняются прямо здесь. Если у теста уже есть результаты, будет создана новая версия.';
+                    wrap.appendChild(hint);
+                }
+            }
+
+            root.appendChild(wrap);
+        });
+    }
+
+    function render() {
+        ensurePages();
+        renderTabs();
+        const page = state.pages[state.active];
+        document.getElementById('pageTitle').value = page.title || '';
+        renderBlocks();
+    }
+
+    function collectPages() {
+        const titleInput = document.getElementById('pageTitle');
+        if (state.pages[state.active]) {
+            state.pages[state.active].title = titleInput.value.trim() || `Страница ${state.active + 1}`;
+        }
+        return state.pages.map((page) => ({
+            title: page.title,
+            blocks: (page.blocks || []).map((block) => {
+                const cleaned = { ...block };
+                delete cleaned.draft;
+                delete cleaned.question_notice;
+                delete cleaned.test_settings;
+                delete cleaned.saved_questions;
+                delete cleaned.question_forms;
+                return cleaned;
+            }),
+        }));
+    }
+
+    document.getElementById('pageTitle').addEventListener('input', () => {
+        if (state.pages[state.active]) {
+            state.pages[state.active].title = document.getElementById('pageTitle').value;
+            renderTabs();
+        }
+    });
+
+    document.getElementById('courseSelect').addEventListener('change', () => {
+        render();
+    });
+
+    document.getElementById('addPage').addEventListener('click', () => {
+        state.pages.push({ title: `Страница ${state.pages.length + 1}`, blocks: [] });
+        state.active = state.pages.length - 1;
+        render();
+    });
+
+    document.getElementById('removePage').addEventListener('click', () => {
+        if (state.pages.length <= 1) {
+            alert('Нельзя удалить последнюю страницу.');
+            return;
+        }
+        state.pages.splice(state.active, 1);
+        state.active = Math.max(0, state.active - 1);
+        render();
+    });
+
+    document.querySelectorAll('[data-block]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const type = btn.getAttribute('data-block');
+            const page = state.pages[state.active];
+            page.blocks.push(createBlock(type));
+            render();
+        });
+    });
+
+    document.querySelectorAll('[data-cmd]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const cmd = btn.getAttribute('data-cmd');
+            const value = btn.getAttribute('data-value');
+            document.execCommand(cmd, false, value);
+        });
+    });
+    document.querySelectorAll('input[data-cmd]').forEach((input) => {
+        input.addEventListener('input', () => {
+            document.execCommand(input.getAttribute('data-cmd'), false, input.value);
+        });
+    });
+    document.querySelectorAll('[data-link]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const url = prompt('Введите ссылку');
+            if (url) document.execCommand('createLink', false, url);
+        });
+    });
+
+    const toolbar = document.getElementById('formatToolbar');
+    const toolbarAnchor = document.getElementById('toolbarAnchor');
+    function findEditable(node) {
+        if (!node) return null;
+        if (node.nodeType === Node.TEXT_NODE) {
+            return node.parentElement ? node.parentElement.closest('.editable') : null;
+        }
+        if (node.nodeType === Node.ELEMENT_NODE) {
+            return node.closest('.editable');
+        }
+        return null;
+    }
+    function placeToolbar(targetBlock) {
+        if (!toolbar || !targetBlock) return;
+        const parent = targetBlock.parentNode;
+        if (parent && toolbar.nextSibling !== targetBlock) {
+            parent.insertBefore(toolbar, targetBlock);
+        }
+        toolbar.classList.add('is-visible');
+    }
+    function hideToolbar() {
+        if (!toolbar) return;
+        toolbar.classList.remove('is-visible');
+        if (toolbarAnchor && toolbar.parentNode !== toolbarAnchor) {
+            toolbarAnchor.appendChild(toolbar);
+        }
+    }
+    function handleSelectionChange() {
+        const sel = window.getSelection();
+        if (!sel || sel.isCollapsed) {
+            hideToolbar();
+            return;
+        }
+        const editable = findEditable(sel.anchorNode) || findEditable(sel.focusNode);
+        if (!editable) {
+            hideToolbar();
+            return;
+        }
+        const block = editable.closest('.block') || editable;
+        placeToolbar(block);
+    }
+    document.addEventListener('selectionchange', handleSelectionChange);
+    document.addEventListener('mouseup', handleSelectionChange);
+    document.addEventListener('keyup', handleSelectionChange);
+
+    document.querySelectorAll('.saveLessonBtn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const pages = collectPages();
+            document.getElementById('pagesInput').value = JSON.stringify(pages);
+            document.getElementById('lessonForm').submit();
+        });
+    });
+
+    document.getElementById('lessonForm').addEventListener('submit', () => {
+        const pages = collectPages();
+        document.getElementById('pagesInput').value = JSON.stringify(pages);
+    });
+
+    loadInitialPages();
+    render();
+</script>
+{% endblock %}

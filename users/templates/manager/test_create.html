@@ -1,0 +1,76 @@
+{% extends "manager/base.html" %}
+
+{% block title %}{% if is_edit %}Редактировать тест{% else %}Создать тест{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>{% if is_edit %}Редактировать тест{% else %}Создать тест{% endif %}</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="grid">
+            <div>
+                <label for="{{ form.course.id_for_label }}">Курс</label>
+                {{ form.course }}
+                {{ form.course.errors }}
+            </div>
+            <div>
+                <label for="{{ form.passing_score.id_for_label }}">Проходной балл (%)</label>
+                {{ form.passing_score }}
+                {{ form.passing_score.errors }}
+            </div>
+            <div>
+                <label for="{{ form.evaluation_type.id_for_label }}">Тип проверки</label>
+                {{ form.evaluation_type }}
+                {{ form.evaluation_type.errors }}
+            </div>
+            <div>
+                <label for="{{ form.attempts.id_for_label }}">Попытки</label>
+                {{ form.attempts }}
+                {{ form.attempts.errors }}
+            </div>
+            <div>
+                <label for="{{ form.warning_threshold.id_for_label }}">Порог (желтый, %)</label>
+                {{ form.warning_threshold }}
+                {{ form.warning_threshold.errors }}
+            </div>
+            <div>
+                <label for="{{ form.success_threshold.id_for_label }}">Порог (зеленый, %)</label>
+                {{ form.success_threshold }}
+                {{ form.success_threshold.errors }}
+            </div>
+            <div>
+                <label for="{{ form.retake_requires_new_attempt.id_for_label }}">Пересдача тратит попытку</label>
+                {{ form.retake_requires_new_attempt }}
+            </div>
+            <div>
+                <label for="{{ form.due_date.id_for_label }}">Срок прохождения</label>
+                {{ form.due_date }}
+                {{ form.due_date.errors }}
+            </div>
+            <div>
+                <label for="{{ form.is_published.id_for_label }}">Опубликован</label>
+                {{ form.is_published }}
+            </div>
+        </div>
+        <div style="margin-top:14px;">
+            <label for="{{ form.title.id_for_label }}">Название</label>
+            {{ form.title }}
+            {{ form.title.errors }}
+        </div>
+        <div style="margin-top:14px;">
+            <label for="{{ form.description.id_for_label }}">Описание</label>
+            {{ form.description }}
+            {{ form.description.errors }}
+        </div>
+        <div class="actions">
+            <button type="submit">{% if is_edit %}Сохранить{% else %}Создать тест{% endif %}</button>
+            {% if is_edit %}
+                <a class="btn secondary" href="{% url 'manager_course_detail' test.course.id %}">Назад</a>
+            {% else %}
+                <a class="btn secondary" href="{% url 'manager_dashboard' %}">Назад</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endblock %}

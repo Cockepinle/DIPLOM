@@ -1,0 +1,171 @@
+flowchart LR
+    %% Expanded structural scheme of the learning platform application
+
+    subgraph C["Клиентский слой"]
+        WEB["Web-клиент<br/>(Browser UI)"]
+        MOB["Мобильный клиент<br/>(iOS / Android)"]
+        ROLES["Роли<br/>Сотрудник / Менеджер / Аналитик / Администратор"]
+        ADMINUI["Django Admin UI"]
+    end
+
+    subgraph CORE["Ядро проекта (config + entrypoint)"]
+        MANAGE["manage.py"]
+        SETTINGS["config/settings.py<br/>INSTALLED_APPS, DB, DRF, JWT, SPECTACULAR"]
+        ROOTURLS["config/urls.py<br/>/admin, /accounts, /api, /"]
+        ASGIWSGI["config/asgi.py / config/wsgi.py"]
+    end
+
+    subgraph APP["Сервер приложений (Django)"]
+        subgraph WEBL["Web layer (templates + views)"]
+            UV["users/views.py<br/>роутинг по ролям, кабинеты, аналитика, workflow"]
+            UURLS["users/urls.py"]
+            FORMS["users/forms.py + courses/forms.py + tests/forms.py"]
+            AUTHB["users/backends.py + users/decorators.py"]
+            TEMPL["users/templates/* + templates/admin/*"]
+            STATIC["static/*<br/>CSS / JS / Fonts"]
+        end
+
+        subgraph APIL["API layer (DRF)"]
+            AUTH["api/auth.py<br/>JWT, register, token endpoints"]
+            APIURLS["api/urls.py<br/>router + schema/docs"]
+            VSBASE["api/viewsets/base.py"]
+            VSU["api/viewsets/users.py"]
+            VSC["api/viewsets/courses.py"]
+            VST["api/viewsets/tests.py"]
+            VSR["api/viewsets/results.py"]
+            VSF["api/viewsets/feedback.py"]
+            VSA["api/viewsets/analytics.py"]
+            SR["api/serializers/*"]
+            PERM["api/permissions.py<br/>RBAC"]
+            EXC["api/exceptions.py"]
+            PAG["api/pagination.py"]
+            SCH["api/schema.py<br/>OpenAPI tags"]
+        end
+
+        subgraph DOMAIN["Доменные приложения (models/admin)"]
+            U["users<br/>пользователи, роли, компетенции"]
+            CO["courses<br/>курсы, уроки, материалы, задания"]
+            TE["tests<br/>тесты, вопросы, ответы, пары/порядок"]
+            RE["results<br/>результаты, попытки, ответы"]
+            FE["feedback<br/>feedback и review"]
+            AN["analytics<br/>audit/event/dashboard/report/export/backup"]
+            ADM["*/admin.py<br/>настройка админ-панели"]
+        end
+
+        subgraph OPS["Служебные модули"]
+            CMD["users/management/commands/*<br/>seed_demo, create_demo_users"]
+            DOCS["docs/*<br/>ER и структурные диаграммы"]
+        end
+    end
+
+    subgraph DATA["Слой данных и хранения"]
+        PG["PostgreSQL (prod) / db.sqlite3 (local)"]
+        MEDIA["/media<br/>uploads: avatars, lesson_assets, submissions"]
+        STATICVOL["/static<br/>статические ресурсы"]
+    end
+
+    WEB -- "HTTPS" --> WEBL
+    WEB --> ROOTURLS
+    MOB -- "HTTPS / JSON" --> APIL
+    ADMINUI --> ROOTURLS
+    ROLES --> AUTHB
+    ROLES --> PERM
+
+    MANAGE --> SETTINGS
+    SETTINGS --> ROOTURLS
+    ROOTURLS --> UURLS
+    ROOTURLS --> APIURLS
+    ASGIWSGI --> ROOTURLS
+
+    UURLS --> UV
+    UV --> FORMS
+    UV --> TEMPL
+    TEMPL --> STATIC
+
+    APIURLS --> AUTH
+    APIURLS --> VSBASE
+    APIURLS --> SCH
+    APIURLS --> PAG
+    VSBASE --> VSU
+    VSBASE --> VSC
+    VSBASE --> VST
+    VSBASE --> VSR
+    VSBASE --> VSF
+    VSBASE --> VSA
+    VSU --> SR
+    VSC --> SR
+    VST --> SR
+    VSR --> SR
+    VSF --> SR
+    VSA --> SR
+    AUTH --> PERM
+    VSU --> PERM
+    VSC --> PERM
+    VST --> PERM
+    VSR --> PERM
+    VSF --> PERM
+    VSA --> PERM
+    VSU --> EXC
+    VSC --> EXC
+    VST --> EXC
+    VSR --> EXC
+    VSF --> EXC
+    VSA --> EXC
+
+    UV --> U
+    UV --> CO
+    UV --> TE
+    UV --> RE
+    UV --> FE
+    UV --> AN
+
+    VSU --> U
+    VSC --> CO
+    VST --> TE
+    VSR --> RE
+    VSF --> FE
+    VSA --> AN
+
+    CO --> U
+    CO --> TE
+    TE --> CO
+    RE --> TE
+    RE --> U
+    FE --> RE
+    FE --> CO
+    AN --> U
+    AN --> CO
+    AN --> TE
+    AN --> RE
+    AN --> FE
+    ADM --> U
+    ADM --> CO
+    ADM --> TE
+    ADM --> RE
+    ADM --> FE
+    ADM --> AN
+
+    U -- "ORM" --> PG
+    CO -- "ORM" --> PG
+    TE -- "ORM" --> PG
+    RE -- "ORM" --> PG
+    FE -- "ORM" --> PG
+    AN -- "ORM" --> PG
+    WEBL -- "read/write files" --> MEDIA
+    STATIC --> STATICVOL
+    CMD --> U
+    CMD --> CO
+    CMD --> TE
+    CMD --> RE
+    CMD --> FE
+    CMD --> AN
+    DOCS -. "архитектурные артефакты" .- APP
+
+    classDef soft fill:#f8fafc,stroke:#64748b,color:#111827;
+    classDef core fill:#eef2ff,stroke:#6366f1,color:#111827;
+    classDef layer fill:#fff7ed,stroke:#f59e0b,color:#111827;
+    classDef data fill:#fef2f2,stroke:#ef4444,color:#111827;
+    class WEB,MOB,ROLES,ADMINUI soft;
+    class CORE,MANAGE,SETTINGS,ROOTURLS,ASGIWSGI core;
+    class APP,WEBL,APIL,DOMAIN,OPS layer;
+    class DATA,PG,MEDIA,STATICVOL data;

@@ -1,0 +1,574 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Аналитика{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .analytics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+    }
+    .metric-card {
+        padding: 16px;
+        border-radius: 16px;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    }
+    .metric-label {
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 6px;
+    }
+    .metric-value {
+        font-size: 20px;
+        font-weight: 700;
+    }
+    .filters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+    }
+    .data-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 10px;
+    }
+    .data-table thead th {
+        text-align: left;
+        padding: 6px 10px;
+        font-size: 12px;
+        letter-spacing: 0.02em;
+        opacity: 0.8;
+    }
+    .data-table tbody tr {
+        background: rgba(255, 255, 255, 0.06);
+        box-shadow: 0 6px 16px rgba(8, 12, 30, 0.18);
+    }
+    .data-table tbody td {
+        padding: 12px;
+        vertical-align: middle;
+    }
+    .data-table tbody td:first-child {
+        border-top-left-radius: 12px;
+        border-bottom-left-radius: 12px;
+    }
+    .data-table tbody td:last-child {
+        border-top-right-radius: 12px;
+        border-bottom-right-radius: 12px;
+    }
+    .bars {
+        display: grid;
+        gap: 10px;
+    }
+    .chart-wrap {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        padding: 10px 12px;
+        min-height: 220px;
+    }
+    .chart-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+    }
+    .chart-meta {
+        font-size: 12px;
+        color: var(--muted);
+    }
+    .chart-svg {
+        width: 100%;
+        height: 180px;
+        display: block;
+    }
+    .dept-chart {
+        display: grid;
+        gap: 12px;
+        margin-top: 12px;
+    }
+    .dept-row {
+        display: grid;
+        grid-template-columns: 160px 1fr 60px;
+        gap: 12px;
+        align-items: center;
+    }
+    .dept-row .label {
+        font-weight: 600;
+        font-size: 13px;
+    }
+    .dept-row .bar {
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.12);
+        overflow: hidden;
+    }
+    .dept-row .bar span {
+        display: block;
+        height: 100%;
+        background: linear-gradient(135deg, #6a11cb, #2575fc);
+    }
+    .dept-row .value {
+        font-size: 12px;
+        text-align: right;
+    }
+    .bar-row {
+        display: grid;
+        grid-template-columns: 140px 1fr 60px;
+        gap: 12px;
+        align-items: center;
+    }
+    .bar {
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.15);
+        overflow: hidden;
+    }
+    .bar span {
+        display: block;
+        height: 100%;
+        background: var(--nav-active-bg);
+    }
+    .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: var(--btn-secondary-bg);
+        color: var(--btn-secondary-text);
+        font-size: 12px;
+    }
+    .split {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 16px;
+    }
+    @media (max-width: 900px) {
+        .split {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Аналитика обучения</h1>
+    <div class="small">Фильтруйте данные и смотрите динамику по сотрудникам и подразделениям.</div>
+</div>
+
+<div class="card">
+    <form method="get">
+        <div class="filters-grid">
+            <div>
+                <label>Период с</label>
+                <input type="date" name="start" value="{{ filters.start }}">
+            </div>
+            <div>
+                <label>Период по</label>
+                <input type="date" name="end" value="{{ filters.end }}">
+            </div>
+            <div>
+                <label>Подразделение</label>
+                <select name="department">
+                    <option value="">Все</option>
+                    {% for dept in departments %}
+                        <option value="{{ dept }}" {% if filters.department == dept %}selected{% endif %}>{{ dept }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>Специальность</label>
+                <select name="specialty">
+                    <option value="">Все</option>
+                    {% for spec in specialties %}
+                        <option value="{{ spec.id }}" {% if filters.specialty == spec.id|stringformat:"s" %}selected{% endif %}>{{ spec.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>Должность</label>
+                <select name="position">
+                    <option value="">Все</option>
+                    {% for pos in positions %}
+                        <option value="{{ pos.id }}" {% if filters.position == pos.id|stringformat:"s" %}selected{% endif %}>{{ pos.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>Курс</label>
+                <select name="course">
+                    <option value="">Все</option>
+                    {% for course in courses %}
+                        <option value="{{ course.id }}" {% if filters.course == course.id|stringformat:"s" %}selected{% endif %}>{{ course.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="actions">
+            <button type="submit">Применить</button>
+            <a class="btn secondary" href="{% url 'analyst_dashboard' %}">Сбросить</a>
+            <a class="btn secondary" href="{% url 'analyst_export' 'xlsx' %}?{{ request.GET.urlencode }}">Экспорт в Excel</a>
+            <a class="btn secondary" href="{% url 'analyst_export' 'pdf' %}?{{ request.GET.urlencode }}">Экспорт в PDF</a>
+        </div>
+    </form>
+</div>
+
+<div class="analytics-grid">
+    <div class="metric-card">
+        <div class="metric-label">Сотрудники</div>
+        <div class="metric-value">{{ summary.employees }}</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-label">Курсы назначены</div>
+        <div class="metric-value">{{ summary.courses_assigned }}</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-label">Курсы завершены</div>
+        <div class="metric-value">{{ summary.courses_completed }}</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-label">Курсы в процессе</div>
+        <div class="metric-value">{{ summary.courses_in_progress }}</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-label">Просрочены</div>
+        <div class="metric-value">{{ summary.courses_overdue }}</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-label">Тесты пройдены</div>
+        <div class="metric-value">{{ summary.tests_taken }}</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-label">Средний балл</div>
+        <div class="metric-value">{% if summary.avg_score or summary.avg_score == 0 %}{{ summary.avg_score|floatformat:1 }}%{% else %}—{% endif %}</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-label">Процент прохождения</div>
+        <div class="metric-value">{{ summary.pass_rate }}%</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-label">Задания отправлено</div>
+        <div class="metric-value">{{ summary.tasks_submitted }}</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-label">Задания приняты</div>
+        <div class="metric-value">{{ summary.tasks_approved }}</div>
+    </div>
+</div>
+
+<div class="split">
+    <div class="card">
+        <div class="chart-title">
+            <h2 style="margin:0;">Динамика тестов</h2>
+            <div class="chart-meta">Количество завершений по месяцам</div>
+        </div>
+        {% if monthly_stats %}
+            <div class="chart-wrap">
+                <svg class="chart-svg" id="monthlyChart" viewBox="0 0 600 180" preserveAspectRatio="none"></svg>
+            </div>
+        {% else %}
+            <div class="small">Нет данных за выбранный период.</div>
+        {% endif %}
+    </div>
+    <div class="card">
+        <div class="chart-title">
+            <h2 style="margin:0;">Проблемные компетенции</h2>
+            <div class="chart-meta">Низкие средние уровни</div>
+        </div>
+        {% if competencies_rows %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Компетенция</th>
+                        <th>Средний уровень</th>
+                        <th>Оценок</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in competencies_rows %}
+                        <tr>
+                            <td>{{ row.competency__name }}</td>
+                            <td>{{ row.avg_level|floatformat:1 }}</td>
+                            <td>{{ row.count }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="small">Компетенции пока не оценены.</div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="chart-title">
+        <h2 style="margin:0;">Сравнение подразделений</h2>
+        <div class="chart-meta">Процент прохождения тестов</div>
+    </div>
+    {% if department_rows %}
+        <div class="dept-chart" id="deptChart"></div>
+    {% else %}
+        <div class="small">Нет данных по подразделениям.</div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>Агрегация по подразделениям</h2>
+    {% if department_rows %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Подразделение</th>
+                    <th>Курсы назначены</th>
+                    <th>Завершены</th>
+                    <th>В процессе</th>
+                    <th>Просрочены</th>
+                    <th>Средний прогресс</th>
+                    <th>Тесты</th>
+                    <th>Средний балл</th>
+                    <th>Процент прохождения</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in department_rows %}
+                    <tr>
+                        <td>{{ row.department }}</td>
+                        <td>{{ row.assigned }}</td>
+                        <td>{{ row.completed }}</td>
+                        <td>{{ row.in_progress }}</td>
+                        <td>{{ row.overdue }}</td>
+                        <td>{% if row.progress_avg %}{{ row.progress_avg|floatformat:1 }}%{% else %}—{% endif %}</td>
+                        <td>{{ row.tests_taken }}</td>
+                        <td>{% if row.avg_score or row.avg_score == 0 %}{{ row.avg_score|floatformat:1 }}%{% else %}—{% endif %}</td>
+                        <td>{{ row.pass_rate }}%</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="small">Нет данных по подразделениям.</div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>Агрегация по сотрудникам</h2>
+    {% if employee_rows %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Сотрудник</th>
+                    <th>Отдел</th>
+                    <th>Специальность</th>
+                    <th>Курсы</th>
+                    <th>Тесты</th>
+                    <th>Средний балл</th>
+                    <th>Процент прохождения</th>
+                    <th>Задания</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in employee_rows %}
+                    <tr>
+                        <td>{{ row.user.last_name }} {{ row.user.first_name }}</td>
+                        <td>{{ row.user.department|default:"—" }}</td>
+                        <td>{{ row.user.specialty|default:"—" }}</td>
+                        <td>{{ row.completed }}/{{ row.assigned }}</td>
+                        <td>{{ row.tests_taken }}</td>
+                        <td>{% if row.avg_score or row.avg_score == 0 %}{{ row.avg_score|floatformat:1 }}%{% else %}—{% endif %}</td>
+                        <td>{{ row.pass_rate }}%</td>
+                        <td>{{ row.tasks_approved }}/{{ row.tasks_submitted }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="small">Нет данных по сотрудникам.</div>
+    {% endif %}
+</div>
+
+<div class="split">
+    <div class="card">
+        <h2>История тестов</h2>
+        {% if recent_tests %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Сотрудник</th>
+                        <th>Тест</th>
+                        <th>Балл</th>
+                        <th>Дата</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in recent_tests %}
+                        <tr>
+                            <td>{{ item.user.last_name }} {{ item.user.first_name }}</td>
+                            <td>{{ item.test.title }}</td>
+                            <td>{% if item.score or item.score == 0 %}{{ item.score }}%{% else %}—{% endif %}</td>
+                            <td>{{ item.completed_at|date:"d.m.Y" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="small">Нет данных.</div>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h2>История заданий</h2>
+        {% if recent_tasks %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Сотрудник</th>
+                        <th>Задание</th>
+                        <th>Статус</th>
+                        <th>Дата</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in recent_tasks %}
+                        <tr>
+                            <td>{{ item.assignment.user.last_name }} {{ item.assignment.user.first_name }}</td>
+                            <td>{{ item.assignment.task.title }}</td>
+                            <td>{{ item.get_status_display }}</td>
+                            <td>{{ item.submitted_at|date:"d.m.Y" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="small">Нет данных.</div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="split">
+    <div class="card">
+        <h2>Дашборды</h2>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="save_dashboard">
+            <input type="hidden" name="start" value="{{ filters.start }}">
+            <input type="hidden" name="end" value="{{ filters.end }}">
+            <input type="hidden" name="department" value="{{ filters.department }}">
+            <input type="hidden" name="specialty" value="{{ filters.specialty }}">
+            <input type="hidden" name="position" value="{{ filters.position }}">
+            <input type="hidden" name="course" value="{{ filters.course }}">
+            <label>Название дашборда</label>
+            <input name="title" placeholder="Например: Аналитика по отделу продаж">
+            <div class="actions">
+                <button type="submit">Сохранить</button>
+            </div>
+        </form>
+        {% if dashboards %}
+            <div class="small" style="margin-top:12px;">Сохранённые дашборды</div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">
+                {% for dash in dashboards %}
+                    <a class="pill" href="{% url 'analyst_dashboard' %}?dashboard={{ dash.id }}">{{ dash.title }}</a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="small">Пока нет сохранённых дашбордов.</div>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h2>Отчёты</h2>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="save_report">
+            <input type="hidden" name="start" value="{{ filters.start }}">
+            <input type="hidden" name="end" value="{{ filters.end }}">
+            <input type="hidden" name="department" value="{{ filters.department }}">
+            <input type="hidden" name="specialty" value="{{ filters.specialty }}">
+            <input type="hidden" name="position" value="{{ filters.position }}">
+            <input type="hidden" name="course" value="{{ filters.course }}">
+            <label>Название отчёта</label>
+            <input name="title" placeholder="Например: Отчёт за квартал">
+            <label>Тип отчёта</label>
+            <select name="report_type">
+                <option value="PROGRESS">Прогресс обучения</option>
+                <option value="COMPETENCY">Компетенции</option>
+                <option value="RESULTS">Результаты тестов</option>
+                <option value="ACTIVITY">Активность</option>
+                <option value="CUSTOM">Пользовательский</option>
+            </select>
+            <div class="actions">
+                <button type="submit">Сохранить</button>
+            </div>
+        </form>
+        {% if reports %}
+            <div class="small" style="margin-top:12px;">Сохранённые отчёты</div>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+                {% for report in reports %}
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                        <div>
+                            <div style="font-weight:600;">{{ report.title }}</div>
+                            <div class="small">{{ report.get_report_type_display }}</div>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <a class="btn secondary" href="{% url 'analyst_export' 'xlsx' %}?{{ report.filters|urlencode }}">Excel</a>
+                            <a class="btn secondary" href="{% url 'analyst_export' 'pdf' %}?{{ report.filters|urlencode }}">PDF</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="small">Пока нет сохранённых отчётов.</div>
+        {% endif %}
+    </div>
+</div>
+
+{{ monthly_series|json_script:"monthlyData" }}
+{{ dept_series|json_script:"deptData" }}
+<script>
+    (function () {
+        const monthlyRaw = document.getElementById('monthlyData');
+        const deptRaw = document.getElementById('deptData');
+        const monthly = monthlyRaw ? JSON.parse(monthlyRaw.textContent || '[]') : [];
+        const dept = deptRaw ? JSON.parse(deptRaw.textContent || '[]') : [];
+
+        const svg = document.getElementById('monthlyChart');
+        if (svg && monthly.length) {
+            const width = 600;
+            const height = 180;
+            const pad = 24;
+            const max = Math.max(...monthly.map(item => item.count), 1);
+            const step = monthly.length > 1 ? (width - pad * 2) / (monthly.length - 1) : 0;
+            const points = monthly.map((item, index) => {
+                const x = pad + index * step;
+                const y = height - pad - (item.count / max) * (height - pad * 2);
+                return { x, y, value: item.count, label: item.label };
+            });
+            const path = points.map((pt, idx) => `${idx === 0 ? 'M' : 'L'}${pt.x},${pt.y}`).join(' ');
+            const area = `${path} L ${points[points.length - 1].x},${height - pad} L ${points[0].x},${height - pad} Z`;
+            svg.innerHTML = `
+                <path d="${area}" fill="rgba(106,17,203,0.12)"></path>
+                <path d="${path}" fill="none" stroke="#6a11cb" stroke-width="3" stroke-linecap="round"></path>
+                ${points.map(pt => `<circle cx="${pt.x}" cy="${pt.y}" r="4" fill="#2575fc"></circle>`).join('')}
+            `;
+        }
+
+        const deptContainer = document.getElementById('deptChart');
+        if (deptContainer && dept.length) {
+            const sorted = [...dept].sort((a, b) => (b.pass_rate || 0) - (a.pass_rate || 0)).slice(0, 8);
+            deptContainer.innerHTML = sorted.map(item => {
+                const rate = Math.round(item.pass_rate || 0);
+                return `
+                    <div class="dept-row">
+                        <div class="label">${item.label || '—'}</div>
+                        <div class="bar"><span style="width:${rate}%;"></span></div>
+                        <div class="value">${rate}%</div>
+                    </div>
+                `;
+            }).join('');
+        }
+    })();
+</script>
+{% endblock %}

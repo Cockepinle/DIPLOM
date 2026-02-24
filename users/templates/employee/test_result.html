@@ -1,0 +1,120 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Результат теста{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .answer-line {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    .answer-correct {
+        color: #1fbf9e;
+        font-weight: 600;
+    }
+    .answer-wrong {
+        color: #f87171;
+        font-weight: 600;
+    }
+    .answer-tag {
+        margin-left: 6px;
+        font-size: 12px;
+        opacity: 0.85;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Результат теста</h1>
+    <div class="small">
+        {{ test_result.test.title }} ·
+        {% if test_result.status == 'UNDER_REVIEW' %}
+            Ожидает проверки
+        {% elif test_result.status == 'PASSED' %}
+            Проверено{% if test_result.score != None %} · {% with score=test_result.score %}<span class="{% if score > test_result.test.success_threshold %}score-green{% elif score >= test_result.test.warning_threshold %}score-yellow{% else %}score-red{% endif %}">{{ score }}%</span>{% endwith %}{% endif %} · Пройден
+        {% elif test_result.status == 'FAILED' %}
+            Проверено{% if test_result.score != None %} · {% with score=test_result.score %}<span class="{% if score > test_result.test.success_threshold %}score-green{% elif score >= test_result.test.warning_threshold %}score-yellow{% else %}score-red{% endif %}">{{ score }}%</span>{% endwith %}{% endif %} · Провален
+        {% elif test_result.status == 'RETURNED' %}
+            На пересдаче
+        {% elif test_result.status == 'DECLINED' %}
+            Отказался от пересдачи
+        {% else %}
+            {% if test_result.score != None %}
+                {% with score=test_result.score %}<span class="{% if score > test_result.test.success_threshold %}score-green{% elif score >= test_result.test.warning_threshold %}score-yellow{% else %}score-red{% endif %}">{{ score }}%</span>{% endwith %}
+            {% endif %}
+            · {{ test_result.passed|yesno:"Пройден,Не пройден" }}
+        {% endif %}
+    </div>
+    {% if test_feedback %}
+        <div class="small" style="margin-top:8px;">
+            Комментарий менеджера:
+            {{ test_feedback.comment|default:"—" }}
+        </div>
+        <div class="small">Оценка: {{ test_feedback.rating|default:"—" }}</div>
+    {% endif %}
+    <div class="actions">
+        <a class="btn secondary" href="{% url 'employee_course_detail' test_result.test.course_id %}">Назад к курсу</a>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Проверка</h2>
+    {% for item in result_questions %}
+        <div style="margin-bottom:16px;">
+            <div style="font-weight:600; margin-bottom:6px;">{{ forloop.counter }}. {{ item.question.text }}</div>
+            {% if item.type == 'SINGLE' or item.type == 'MULTI' %}
+                {% for answer in item.answers %}
+                    <div class="small answer-line{% if show_review %}{% if answer.id in item.correct_ids %} answer-correct{% elif answer.id in item.selected_ids %} answer-wrong{% endif %}{% endif %}" style="margin-bottom:4px;">
+                        {% if answer.id in item.selected_ids %}
+                            ✓
+                        {% endif %}
+                        {{ answer.text }}
+                        {% if show_review and answer.id in item.correct_ids %}
+                            <span class="answer-tag">правильный</span>
+                        {% elif show_review and answer.id in item.selected_ids %}
+                            <span class="answer-tag">неверный</span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% elif item.type == 'MATCHING' %}
+                {% for row in item.matching_rows %}
+                    <div class="small" style="margin-bottom:4px;">
+                        {{ row.left_text }} —
+                        <span{% if show_review %}{% if row.selected_right_id == row.right_id %} class="answer-correct"{% elif row.selected_right_id %} class="answer-wrong"{% endif %}{% endif %}>
+                            {{ row.selected_right_text|default:"—" }}
+                        </span>
+                        {% if show_review and row.selected_right_id != row.right_id %}
+                            <span class="answer-correct"> (Правильно: {{ row.right_text }})</span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% elif item.type == 'ORDERING' %}
+                {% if item.ordering_rows %}
+                    {% for row in item.ordering_rows %}
+                        <div class="small" style="margin-bottom:4px;">
+                            {{ row.text }} —
+                            <span{% if show_review %}{% if row.user_position == row.position %} class="answer-correct"{% elif row.user_position %} class="answer-wrong"{% endif %}{% endif %}>
+                                ваше место: {{ row.user_position|default:"—" }}
+                            </span>
+                            {% if show_review and row.user_position != row.position %}
+                                <span class="answer-correct"> (Правильно: {{ row.position }})</span>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="small">—</div>
+                {% endif %}
+            {% elif item.type == 'SHORT' or item.type == 'LONG' %}
+                <div class="small">{{ item.answer_text|default:"—" }}</div>
+                {% if item.answer_file %}
+                    <div class="small">
+                        <a href="{{ item.answer_file.url }}" target="_blank" rel="noopener">Файл ответа</a>
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

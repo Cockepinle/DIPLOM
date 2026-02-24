@@ -1,0 +1,37 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Назначить задание{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Назначить задание</h1>
+    <div class="small">Задание: <strong>{{ task.title }}</strong></div>
+    <div class="small">Доступно сотрудников: {{ users_count }}</div>
+    <form method="post" style="margin-top:16px;">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="grid">
+            <div>
+                <label for="{{ form.due_date.id_for_label }}">Срок выполнения</label>
+                {{ form.due_date }}
+            </div>
+            <div>
+                <label for="{{ form.priority.id_for_label }}">Приоритет</label>
+                {{ form.priority }}
+            </div>
+        </div>
+        <div style="margin-top:14px;">
+            <label>Сотрудники</label>
+            {{ form.users }}
+            {{ form.users.errors }}
+            {% if not users_count %}
+                <div class="small" style="margin-top:8px;">Нет сотрудников для назначения.</div>
+            {% endif %}
+        </div>
+        <div class="actions">
+            <button type="submit">Назначить</button>
+            <a class="btn secondary" href="{% url 'manager_dashboard' %}">Готово</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

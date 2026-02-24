@@ -1,0 +1,66 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Материалы{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Материалы</h1>
+    <form method="get" style="display:flex; gap:12px; align-items:end; flex-wrap:wrap;">
+        <div style="min-width:240px;">
+            <label for="courseFilter">Курс</label>
+            <select id="courseFilter" name="course">
+                <option value="">Все курсы</option>
+                {% for course in courses %}
+                    <option value="{{ course.id }}" {% if course.id|stringformat:"s" == selected_course %}selected{% endif %}>
+                        {{ course.title }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn secondary">Показать</button>
+        <a class="btn" href="{% url 'manager_material_create' %}{% if selected_course %}?course={{ selected_course }}{% endif %}">Создать лекцию</a>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Список материалов</h2>
+    {% if materials %}
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="text-align:left;">
+                    <th style="padding:8px 6px;">Материал</th>
+                    <th style="padding:8px 6px;">Курс</th>
+                    <th style="padding:8px 6px;">Тест</th>
+                    <th style="padding:8px 6px;">Тип</th>
+                    <th style="padding:8px 6px;">Порядок</th>
+                    <th style="padding:8px 6px;">Обязательный</th>
+                    <th style="padding:8px 6px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for material in materials %}
+                    <tr style="border-top:1px solid rgba(255,255,255,0.12);">
+                        <td style="padding:8px 6px;">{{ material.title }}</td>
+                        <td style="padding:8px 6px;">{{ material.course.title }}</td>
+                        <td style="padding:8px 6px;">{{ material.test.title|default:"—" }}</td>
+                        <td style="padding:8px 6px;">{{ material.get_material_type_display }}</td>
+                        <td style="padding:8px 6px;">{{ material.order }}</td>
+                        <td style="padding:8px 6px;">{{ material.is_required|yesno:"Да,Нет" }}</td>
+                        <td style="padding:8px 6px;">
+                            <div class="actions" style="gap:6px; flex-wrap:wrap;">
+                                <a class="btn secondary" href="{% url 'manager_material_edit' material.id %}">Изменить</a>
+                                <form method="post" action="{% url 'manager_material_delete' material.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit">Удалить</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="small">Материалов пока нет.</div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Назначить сотрудников{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Назначить сотрудников на курс</h1>
+    <div class="small">Курс: <strong>{{ course.title }}</strong></div>
+    {% if course.specialty %}
+        <div class="small">Специальность: {{ course.specialty }}</div>
+    {% endif %}
+
+    <form method="post" style="margin-top:16px;">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div>
+            <label for="{{ form.due_date.id_for_label }}">Срок прохождения</label>
+            {{ form.due_date }}
+            {{ form.due_date.errors }}
+        </div>
+        <div style="margin-top:14px;">
+            <label>{{ form.assign_all }} Выбрать всех</label>
+        </div>
+        <div style="margin-top:10px;">
+            <label>Сотрудники ({{ users_count }})</label>
+            {% if users_count %}
+                {{ form.users }}
+            {% else %}
+                <div class="small">Нет сотрудников с выбранной специальностью.</div>
+            {% endif %}
+            {{ form.users.errors }}
+        </div>
+        <div class="actions">
+            <button type="submit">Назначить</button>
+            <a class="btn secondary" href="{% url 'manager_dashboard' %}">Готово</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

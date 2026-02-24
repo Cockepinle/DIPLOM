@@ -1,0 +1,210 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Курс: {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="card" style="padding:0; overflow:hidden;">
+    <div style="
+        min-height: 220px;
+        padding: 24px;
+        display:flex;
+        flex-direction:column;
+        justify-content:space-between;
+        background:
+            linear-gradient(135deg, rgba(17,17,17,0.55), rgba(17,17,17,0.25))
+            {% if course.cover_image %}, url('{{ course.cover_image.url }}'){% endif %};
+        background-size: cover;
+        background-position: center;
+    ">
+        <div style="display:flex; justify-content:flex-end;">
+            <div class="small" style="background: var(--card-bg); padding:6px 10px; border-radius:999px;">
+                {{ course.is_active|yesno:"Активен,Неактивен" }}
+            </div>
+        </div>
+        <div>
+            <h1 style="margin:0 0 6px;">{{ course.title }}</h1>
+            <div class="small">{{ course.description|default:"Введите описание курса" }}</div>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <div class="small">Специальность: {{ course.specialty|default:"—" }}</div>
+            <div class="small">Создатель: {{ course.created_by }}</div>
+        </div>
+    </div>
+    <div class="actions" style="padding:16px 24px;">
+        <a class="btn secondary" href="{% url 'manager_course_edit' course.id %}">Изменить курс</a>
+        <a class="btn" href="{% url 'manager_course_assign' course.id %}">Назначить сотрудников</a>
+        <a class="btn" href="{% url 'manager_test_create' %}?course={{ course.id }}">Создать тест</a>
+        <a class="btn" href="{% url 'manager_task_create' %}?course={{ course.id }}">Создать задание</a>
+        <form method="post" action="{% url 'manager_course_delete' course.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{% url 'manager_course_list' %}">
+            <button type="submit">Удалить курс</button>
+        </form>
+        <a class="btn secondary" href="{% url 'manager_course_list' %}">К списку курсов</a>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Участники курса</h2>
+    {% if enrollments %}
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="text-align:left;">
+                    <th style="padding:8px 6px;">Сотрудник</th>
+                    <th style="padding:8px 6px;">Должность</th>
+                    <th style="padding:8px 6px;">Статус</th>
+                    <th style="padding:8px 6px;">Срок</th>
+                    <th style="padding:8px 6px;">Прогресс</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enrollment in enrollments %}
+                    <tr style="border-top:1px solid rgba(255,255,255,0.12);">
+                        <td style="padding:8px 6px;">
+                            {{ enrollment.user.last_name }} {{ enrollment.user.first_name }}
+                        </td>
+                        <td style="padding:8px 6px;">
+                            {{ enrollment.user.position|default:"—" }}
+                        </td>
+                        <td style="padding:8px 6px;">{{ enrollment.get_status_display }}</td>
+                        <td style="padding:8px 6px;">{{ enrollment.due_date|date:"d.m.Y"|default:"—" }}</td>
+                        <td style="padding:8px 6px;">{{ enrollment.progress }}%</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="small">Пока никто не назначен.</div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>Тесты</h2>
+    {% if tests_data %}
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="text-align:left;">
+                    <th style="padding:8px 6px;">Тест</th>
+                    <th style="padding:8px 6px;">Проходной балл (%)</th>
+                    <th style="padding:8px 6px;">Тип проверки</th>
+                    <th style="padding:8px 6px;">Статус</th>
+                    <th style="padding:8px 6px;">Результаты (осн.)</th>
+                    <th style="padding:8px 6px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in tests_data %}
+                    <tr style="border-top:1px solid rgba(255,255,255,0.12);">
+                        <td style="padding:8px 6px;">{{ item.test.title }}</td>
+                        <td style="padding:8px 6px;">{{ item.test.passing_score }}%</td>
+                        <td style="padding:8px 6px;">
+                            {% if item.test.evaluation_type == 'MANUAL' %}
+                                На проверке
+                            {% else %}
+                                Автоматически
+                            {% endif %}
+                        </td>
+                        <td style="padding:8px 6px;">{{ item.test.is_published|yesno:"Опубликован,Черновик" }}</td>
+                        <td style="padding:8px 6px;">
+                            {% if item.summary %}
+                                Пройден: {{ item.summary.PASSED }} ·
+                                Провален: {{ item.summary.FAILED }} ·
+                                Ожидает: {{ item.summary.UNDER_REVIEW }} ·
+                                На пересдаче: {{ item.summary.RETURNED }} ·
+                                Отказались: <span style="color:#ff8fa3;">{{ item.summary.DECLINED }}</span>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td style="padding:8px 6px;">
+                            <div class="actions" style="gap:6px; flex-wrap:wrap;">
+                                {% if not item.assigned %}
+                                <a class="btn secondary" href="{% url 'manager_test_edit' item.test.id %}">Изменить</a>
+                                {% endif %}
+                                <a class="btn secondary" href="{% url 'manager_test_questions' item.test.id %}">Вопросы</a>
+                                <a class="btn secondary" href="{% url 'manager_test_results' item.test.id %}">Проверить</a>
+                                {% if item.test.is_published %}
+                                    <form method="post" action="{% url 'manager_test_unpublish' item.test.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.path }}">
+                                        <button type="submit" class="btn secondary">Отозвать</button>
+                                    </form>
+                                {% else %}
+                                    <form method="post" action="{% url 'manager_test_publish' item.test.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.path }}">
+                                        <button type="submit">Опубликовать</button>
+                                    </form>
+                                {% endif %}
+                                <form method="post" action="{% url 'manager_test_delete' item.test.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    <button type="submit">Удалить</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="small">Тестов пока нет.</div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>Модули</h2>
+    <div class="actions" style="margin-bottom:12px;">
+        <a class="btn" href="{% url 'manager_lesson_create' %}?course={{ course.id }}">Создать урок</a>
+    </div>
+    {% if lessons %}
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="text-align:left;">
+                    <th style="padding:8px 6px;">Урок</th>
+                    <th style="padding:8px 6px;">Тест</th>
+                    <th style="padding:8px 6px;">Статус</th>
+                    <th style="padding:8px 6px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lesson in lessons %}
+                    <tr style="border-top:1px solid rgba(255,255,255,0.12);">
+                        <td style="padding:8px 6px;">{{ lesson.title }}</td>
+                        <td style="padding:8px 6px;">{% if lesson.has_test %}Есть{% else %}—{% endif %}</td>
+                        <td style="padding:8px 6px;">{{ lesson.is_published|yesno:"Опубликован,Черновик" }}</td>
+                        <td style="padding:8px 6px;">
+                            <div class="actions" style="gap:6px; flex-wrap:wrap;">
+                                <a class="btn secondary" href="{% url 'manager_lesson_edit' lesson.id %}">Изменить</a>
+                                <form method="post" action="{% url 'manager_lesson_delete' lesson.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit">Удалить</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="small">Уроков пока нет.</div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>Задания</h2>
+    {% if tasks %}
+        <ul style="margin:0; padding-left:18px;">
+            {% for task in tasks %}
+                <li style="margin-bottom:6px;">
+                    {{ task.title }} · {{ task.get_task_type_display }} ·
+                    Макс. балл: {{ task.max_score }} ·
+                    {{ task.is_published|yesno:"Опубликовано,Черновик" }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <div class="small">Заданий пока нет.</div>
+    {% endif %}
+</div>
+{% endblock %}

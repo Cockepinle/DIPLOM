@@ -1,0 +1,125 @@
+Таблица 10 - Характеристика веб-приложения
+
+| № | Модуль | Описание | Строк | Размер (КБ) |
+|---:|---|---|---:|---:|
+| 1 | `analytics/__init__.py` | Маркер Python-пакета | 0 | 0.0 |
+| 2 | `analytics/admin.py` | Регистрация и настройка моделей в админ-панели | 51 | 1.6 |
+| 3 | `analytics/apps.py` | Конфигурация Django-приложения | 5 | 0.1 |
+| 4 | `analytics/models.py` | Модели и структура данных домена | 296 | 7.9 |
+| 5 | `analytics/tests.py` | Заготовка/набор тестов модуля | 3 | 0.1 |
+| 6 | `analytics/views.py` | Серверные представления и обработка запросов | 3 | 0.1 |
+| 7 | `api/__init__.py` | Маркер Python-пакета | 0 | 0.0 |
+| 8 | `api/apps.py` | Конфигурация Django-приложения | 6 | 0.1 |
+| 9 | `api/auth.py` | JWT-аутентификация и регистрация пользователей | 192 | 6.5 |
+| 10 | `api/exceptions.py` | Централизованная обработка исключений API | 78 | 2.2 |
+| 11 | `api/pagination.py` | Настройки и классы пагинации API | 7 | 0.2 |
+| 12 | `api/permissions.py` | Проверка прав доступа и ролей (RBAC) | 35 | 1.2 |
+| 13 | `api/schema.py` | Настройка OpenAPI/Swagger схемы | 12 | 0.3 |
+| 14 | `api/serializers/__init__.py` | Маркер Python-пакета | 64 | 1.6 |
+| 15 | `api/serializers/analytics.py` | DRF-сериализаторы данных | 207 | 4.9 |
+| 16 | `api/serializers/courses.py` | DRF-сериализаторы данных | 277 | 8.1 |
+| 17 | `api/serializers/feedback.py` | DRF-сериализаторы данных | 64 | 1.8 |
+| 18 | `api/serializers/results.py` | DRF-сериализаторы данных | 94 | 3.1 |
+| 19 | `api/serializers/tests.py` | Заготовка/набор тестов модуля | 178 | 5.4 |
+| 20 | `api/serializers/users.py` | DRF-сериализаторы данных | 231 | 6.6 |
+| 21 | `api/urls.py` | Маршрутизация URL и точки входа | 83 | 3.4 |
+| 22 | `api/viewsets/__init__.py` | Маркер Python-пакета | 62 | 1.4 |
+| 23 | `api/viewsets/analytics.py` | ViewSet-эндпоинты REST API | 334 | 12.5 |
+| 24 | `api/viewsets/base.py` | ViewSet-эндпоинты REST API | 56 | 2.0 |
+| 25 | `api/viewsets/courses.py` | ViewSet-эндпоинты REST API | 195 | 6.9 |
+| 26 | `api/viewsets/feedback.py` | ViewSet-эндпоинты REST API | 48 | 1.8 |
+| 27 | `api/viewsets/results.py` | ViewSet-эндпоинты REST API | 25 | 0.9 |
+| 28 | `api/viewsets/tests.py` | Заготовка/набор тестов модуля | 465 | 19.7 |
+| 29 | `api/viewsets/users.py` | ViewSet-эндпоинты REST API | 124 | 4.8 |
+| 30 | `artculinary/__init__.py` | Маркер Python-пакета | 0 | 0.0 |
+| 31 | `artculinary/admin.py` | Регистрация и настройка моделей в админ-панели | 3 | 0.1 |
+| 32 | `artculinary/apps.py` | Конфигурация Django-приложения | 5 | 0.1 |
+| 33 | `artculinary/models.py` | Модели и структура данных домена | 3 | 0.1 |
+| 34 | `artculinary/tests.py` | Заготовка/набор тестов модуля | 3 | 0.1 |
+| 35 | `artculinary/views.py` | Серверные представления и обработка запросов | 3 | 0.1 |
+| 36 | `config/__init__.py` | Маркер Python-пакета | 0 | 0.0 |
+| 37 | `config/asgi.py` | ASGI-конфигурация приложения | 16 | 0.4 |
+| 38 | `config/settings.py` | Глобальные настройки проекта | 197 | 5.5 |
+| 39 | `config/urls.py` | Маршрутизация URL и точки входа | 14 | 0.4 |
+| 40 | `config/wsgi.py` | WSGI-конфигурация приложения | 16 | 0.4 |
+| 41 | `courses/__init__.py` | Маркер Python-пакета | 0 | 0.0 |
+| 42 | `courses/admin.py` | Регистрация и настройка моделей в админ-панели | 66 | 2.1 |
+| 43 | `courses/apps.py` | Конфигурация Django-приложения | 5 | 0.1 |
+| 44 | `courses/forms.py` | Формы и валидация пользовательского ввода | 167 | 5.4 |
+| 45 | `courses/models.py` | Модели и структура данных домена | 484 | 13.1 |
+| 46 | `courses/tests.py` | Заготовка/набор тестов модуля | 3 | 0.1 |
+| 47 | `courses/views.py` | Серверные представления и обработка запросов | 3 | 0.1 |
+| 48 | `docs/er_diagram.md` | Документация и диаграммы проекта | 276 | 5.7 |
+| 49 | `docs/er_diagram.mmd` | Документация и диаграммы проекта | 274 | 5.7 |
+| 50 | `feedback/__init__.py` | Маркер Python-пакета | 0 | 0.0 |
+| 51 | `feedback/admin.py` | Регистрация и настройка моделей в админ-панели | 16 | 0.7 |
+| 52 | `feedback/apps.py` | Конфигурация Django-приложения | 5 | 0.1 |
+| 53 | `feedback/models.py` | Модели и структура данных домена | 66 | 1.7 |
+| 54 | `feedback/tests.py` | Заготовка/набор тестов модуля | 3 | 0.1 |
+| 55 | `feedback/views.py` | Серверные представления и обработка запросов | 3 | 0.1 |
+| 56 | `manage.py` | Точка входа Django-проекта | 22 | 0.7 |
+| 57 | `requirements.txt` | Список Python-зависимостей | 8 | 0.1 |
+| 58 | `results/__init__.py` | Маркер Python-пакета | 0 | 0.0 |
+| 59 | `results/admin.py` | Регистрация и настройка моделей в админ-панели | 23 | 0.7 |
+| 60 | `results/apps.py` | Конфигурация Django-приложения | 5 | 0.1 |
+| 61 | `results/models.py` | Модели и структура данных домена | 111 | 3.1 |
+| 62 | `results/tests.py` | Заготовка/набор тестов модуля | 3 | 0.1 |
+| 63 | `results/views.py` | Серверные представления и обработка запросов | 3 | 0.1 |
+| 64 | `static/admin/custom_admin.css` | Таблицы стилей интерфейса | 447 | 9.6 |
+| 65 | `static/admin_panel/admin_panel.css` | Таблицы стилей интерфейса | 379 | 6.6 |
+| 66 | `static/admin_panel/admin_panel.js` | Клиентская логика интерфейса (JavaScript) | 633 | 26.5 |
+| 67 | `templates/admin/base_site.html` | Служебный модуль проекта | 21 | 0.6 |
+| 68 | `templates/admin/login.html` | Служебный модуль проекта | 74 | 1.9 |
+| 69 | `tests/__init__.py` | Маркер Python-пакета | 0 | 0.0 |
+| 70 | `tests/admin.py` | Регистрация и настройка моделей в админ-панели | 62 | 1.4 |
+| 71 | `tests/apps.py` | Конфигурация Django-приложения | 5 | 0.1 |
+| 72 | `tests/forms.py` | Формы и валидация пользовательского ввода | 72 | 1.7 |
+| 73 | `tests/models.py` | Модели и структура данных домена | 244 | 7.0 |
+| 74 | `tests/tests.py` | Заготовка/набор тестов модуля | 3 | 0.1 |
+| 75 | `tests/views.py` | Серверные представления и обработка запросов | 3 | 0.1 |
+| 76 | `users/__init__.py` | Маркер Python-пакета | 0 | 0.0 |
+| 77 | `users/admin.py` | Регистрация и настройка моделей в админ-панели | 53 | 1.6 |
+| 78 | `users/apps.py` | Конфигурация Django-приложения | 5 | 0.1 |
+| 79 | `users/backends.py` | Кастомный backend аутентификации | 19 | 0.7 |
+| 80 | `users/decorators.py` | Декораторы проверки ролей и доступа | 11 | 0.4 |
+| 81 | `users/forms.py` | Формы и валидация пользовательского ввода | 114 | 3.4 |
+| 82 | `users/management/__init__.py` | Маркер Python-пакета | 0 | 0.0 |
+| 83 | `users/management/commands/__init__.py` | Маркер Python-пакета | 0 | 0.0 |
+| 84 | `users/management/commands/create_demo_users.py` | Служебный модуль проекта | 100 | 3.4 |
+| 85 | `users/management/commands/seed_demo.py` | Служебный модуль проекта | 282 | 9.9 |
+| 86 | `users/models.py` | Модели и структура данных домена | 279 | 7.9 |
+| 87 | `users/templates/admin_panel/dashboard.html` | HTML-шаблон: admin_panel/dashboard.html | 108 | 4.6 |
+| 88 | `users/templates/employee/course_detail.html` | HTML-шаблон: employee/course_detail.html | 436 | 19.1 |
+| 89 | `users/templates/employee/dashboard.html` | HTML-шаблон: employee/dashboard.html | 43 | 2.0 |
+| 90 | `users/templates/employee/lesson_detail.html` | HTML-шаблон: employee/lesson_detail.html | 175 | 6.8 |
+| 91 | `users/templates/employee/task_detail.html` | HTML-шаблон: employee/task_detail.html | 59 | 2.2 |
+| 92 | `users/templates/employee/test_result.html` | HTML-шаблон: employee/test_result.html | 120 | 6.0 |
+| 93 | `users/templates/employee/test_take.html` | HTML-шаблон: employee/test_take.html | 464 | 17.5 |
+| 94 | `users/templates/manager/base.html` | HTML-шаблон: manager/base.html | 366 | 13.0 |
+| 95 | `users/templates/manager/course_assign.html` | HTML-шаблон: manager/course_assign.html | 39 | 1.5 |
+| 96 | `users/templates/manager/course_create.html` | HTML-шаблон: manager/course_create.html | 47 | 1.9 |
+| 97 | `users/templates/manager/course_detail.html` | HTML-шаблон: manager/course_detail.html | 210 | 10.6 |
+| 98 | `users/templates/manager/course_list.html` | HTML-шаблон: manager/course_list.html | 40 | 2.0 |
+| 99 | `users/templates/manager/drafts.html` | HTML-шаблон: manager/drafts.html | 96 | 4.7 |
+| 100 | `users/templates/manager/lesson_builder.html` | HTML-шаблон: manager/lesson_builder.html | 1590 | 68.1 |
+| 101 | `users/templates/manager/lesson_list.html` | HTML-шаблон: manager/lesson_list.html | 62 | 2.9 |
+| 102 | `users/templates/manager/material_form.html` | HTML-шаблон: manager/material_form.html | 197 | 7.3 |
+| 103 | `users/templates/manager/material_list.html` | HTML-шаблон: manager/material_list.html | 66 | 3.2 |
+| 104 | `users/templates/manager/student_detail.html` | HTML-шаблон: manager/student_detail.html | 22 | 0.7 |
+| 105 | `users/templates/manager/students_list.html` | HTML-шаблон: manager/students_list.html | 41 | 1.7 |
+| 106 | `users/templates/manager/task_assign.html` | HTML-шаблон: manager/task_assign.html | 37 | 1.4 |
+| 107 | `users/templates/manager/task_create.html` | HTML-шаблон: manager/task_create.html | 66 | 2.8 |
+| 108 | `users/templates/manager/task_list.html` | HTML-шаблон: manager/task_list.html | 66 | 3.4 |
+| 109 | `users/templates/manager/test_create.html` | HTML-шаблон: manager/test_create.html | 76 | 3.2 |
+| 110 | `users/templates/manager/test_questions.html` | HTML-шаблон: manager/test_questions.html | 264 | 11.7 |
+| 111 | `users/templates/manager/test_results.html` | HTML-шаблон: manager/test_results.html | 69 | 3.3 |
+| 112 | `users/templates/manager/test_review.html` | HTML-шаблон: manager/test_review.html | 241 | 9.2 |
+| 113 | `users/templates/registration/login.html` | HTML-шаблон: registration/login.html | 209 | 5.6 |
+| 114 | `users/templates/users/analyst_dashboard.html` | HTML-шаблон: users/analyst_dashboard.html | 574 | 22.1 |
+| 115 | `users/templates/users/home.html` | HTML-шаблон: users/home.html | 125 | 4.1 |
+| 116 | `users/templates/users/manager_dashboard.html` | HTML-шаблон: users/manager_dashboard.html | 28 | 1.3 |
+| 117 | `users/templates/users/profile.html` | HTML-шаблон: users/profile.html | 261 | 6.9 |
+| 118 | `users/templates/users/register.html` | HTML-шаблон: users/register.html | 169 | 4.8 |
+| 119 | `users/tests.py` | Заготовка/набор тестов модуля | 3 | 0.1 |
+| 120 | `users/urls.py` | Маршрутизация URL и точки входа | 106 | 5.8 |
+| 121 | `users/views.py` | Серверные представления и обработка запросов | 2876 | 106.9 |

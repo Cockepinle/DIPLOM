@@ -1,0 +1,66 @@
+{% extends "manager/base.html" %}
+
+{% block title %}{% if is_edit %}Редактировать задание{% else %}Создать задание{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>{% if is_edit %}Редактировать задание{% else %}Создать задание{% endif %}</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="grid">
+            <div>
+                <label for="{{ form.course.id_for_label }}">Курс</label>
+                {{ form.course }}
+            </div>
+            <div>
+                <label for="{{ form.task_type.id_for_label }}">Тип задания</label>
+                {{ form.task_type }}
+            </div>
+            <div>
+                <label for="{{ form.max_score.id_for_label }}">Макс. балл</label>
+                {{ form.max_score }}
+            </div>
+            <div>
+                <label for="{{ form.due_date.id_for_label }}">Срок выполнения</label>
+                {{ form.due_date }}
+            </div>
+            <div>
+                <label for="{{ form.is_published.id_for_label }}">Опубликовано</label>
+                {{ form.is_published }}
+            </div>
+        </div>
+        <div style="margin-top:14px;">
+            <label for="{{ form.title.id_for_label }}">Название</label>
+            {{ form.title }}
+        </div>
+        <div style="margin-top:14px;">
+            <label for="{{ form.description.id_for_label }}">Описание</label>
+            {{ form.description }}
+        </div>
+        <div style="margin-top:14px;">
+            <label for="{{ form.attachment.id_for_label }}">Файл задания (PDF/Word и др.)</label>
+            {{ form.attachment }}
+            {{ form.attachment.errors }}
+            {% if is_edit and task.attachment %}
+                <div class="small" style="margin-top:8px;">
+                    Текущий файл:
+                    <a href="{{ task.attachment.url }}" target="_blank" rel="noopener">Открыть</a>
+                </div>
+            {% endif %}
+        </div>
+        <div style="margin-top:14px;">
+            <label for="{{ form.criteria.id_for_label }}">Критерии оценки</label>
+            {{ form.criteria }}
+        </div>
+        <div class="actions">
+            <button type="submit">{% if is_edit %}Сохранить{% else %}Создать задание{% endif %}</button>
+            {% if is_edit %}
+                <a class="btn secondary" href="{% url 'manager_task_list' %}">Назад</a>
+            {% else %}
+                <a class="btn secondary" href="{% url 'manager_dashboard' %}">Назад</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endblock %}

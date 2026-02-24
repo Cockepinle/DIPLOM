@@ -1,0 +1,264 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Вопросы теста{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Вопросы теста</h1>
+    <div class="small">Тест: <strong>{{ test.title }}</strong></div>
+
+    {% if can_edit %}
+        <form method="post" enctype="multipart/form-data" style="margin-top:16px;">
+            {% csrf_token %}
+            {{ q_form.non_field_errors }}
+            <div class="grid">
+                <div>
+                    <label for="{{ q_form.type.id_for_label }}">Тип вопроса</label>
+                    {{ q_form.type }}
+                    {{ q_form.type.errors }}
+                </div>
+                <div>
+                    <label for="{{ q_form.points.id_for_label }}">Баллы</label>
+                    {{ q_form.points }}
+                    {{ q_form.points.errors }}
+                </div>
+            </div>
+            <div style="margin-top:12px;">
+                <label for="{{ q_form.text.id_for_label }}">Текст вопроса</label>
+                {{ q_form.text }}
+                {{ q_form.text.errors }}
+            </div>
+        <div style="margin-top:12px;">
+            <label for="{{ q_form.image.id_for_label }}">Файл (необязательно)</label>
+            {{ q_form.image }}
+            {{ q_form.image.errors }}
+        </div>
+
+            <div id="block-answers" data-question-block="SINGLE MULTI" style="margin-top:16px;">
+                <h2>Ответы</h2>
+                <div class="small" style="margin-bottom:8px;">
+                    Для вопроса с одним вариантом отметьте ровно один правильный ответ.
+                </div>
+                <div data-formset data-formset-prefix="answers">
+                    {{ answer_formset.management_form }}
+                    <div data-formset-items>
+                        {% for form in answer_formset %}
+                            <div class="grid" style="margin-bottom:8px;" data-formset-item>
+                                <div>
+                                    <label>Ответ</label>
+                                    {{ form.text }}
+                                </div>
+                                <div>
+                                    <label>Правильный</label>
+                                    {{ form.is_correct }}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <template data-formset-template>
+                        <div class="grid" style="margin-bottom:8px;" data-formset-item>
+                            <div>
+                                <label>Ответ</label>
+                                {{ answer_formset.empty_form.text }}
+                            </div>
+                            <div>
+                                <label>Правильный</label>
+                                {{ answer_formset.empty_form.is_correct }}
+                            </div>
+                        </div>
+                    </template>
+                    {{ answer_formset.non_form_errors }}
+                    <button type="button" class="btn secondary" data-formset-add>Добавить вариант</button>
+                </div>
+            </div>
+
+            <div id="block-matching" data-question-block="MATCHING" style="margin-top:16px;">
+                <h2>Сопоставление</h2>
+                <div data-formset data-formset-prefix="matching">
+                    {{ matching_formset.management_form }}
+                    <div data-formset-items>
+                        {% for form in matching_formset %}
+                            <div class="grid" style="margin-bottom:8px;" data-formset-item>
+                                <div>
+                                    <label>Левая часть</label>
+                                    {{ form.left_text }}
+                                </div>
+                                <div>
+                                    <label>Правая часть</label>
+                                    {{ form.right_text }}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <template data-formset-template>
+                        <div class="grid" style="margin-bottom:8px;" data-formset-item>
+                            <div>
+                                <label>Левая часть</label>
+                                {{ matching_formset.empty_form.left_text }}
+                            </div>
+                            <div>
+                                <label>Правая часть</label>
+                                {{ matching_formset.empty_form.right_text }}
+                            </div>
+                        </div>
+                    </template>
+                    {{ matching_formset.non_form_errors }}
+                    <button type="button" class="btn secondary" data-formset-add>Добавить пару</button>
+                </div>
+            </div>
+
+            <div id="block-ordering" data-question-block="ORDERING" style="margin-top:16px;">
+                <h2>Последовательность</h2>
+                <div data-formset data-formset-prefix="ordering">
+                    {{ ordering_formset.management_form }}
+                    <div data-formset-items>
+                        {% for form in ordering_formset %}
+                            <div class="grid" style="margin-bottom:8px;" data-formset-item>
+                                <div>
+                                    <label>Элемент</label>
+                                    {{ form.text }}
+                                </div>
+                                <div>
+                                    <label>Позиция</label>
+                                    {{ form.position }}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <template data-formset-template>
+                        <div class="grid" style="margin-bottom:8px;" data-formset-item>
+                            <div>
+                                <label>Элемент</label>
+                                {{ ordering_formset.empty_form.text }}
+                            </div>
+                            <div>
+                                <label>Позиция</label>
+                                {{ ordering_formset.empty_form.position }}
+                            </div>
+                        </div>
+                    </template>
+                    {{ ordering_formset.non_form_errors }}
+                    <button type="button" class="btn secondary" data-formset-add>Добавить элемент</button>
+                </div>
+            </div>
+
+            <div id="block-manual" data-question-block="SHORT LONG" class="small" style="margin-top:16px;">
+                Ответ будет проверяться вручную менеджером.
+            </div>
+
+            <div class="actions">
+                <button type="submit">Добавить вопрос</button>
+                <a class="btn secondary" href="{% url 'manager_dashboard' %}">Готово</a>
+            </div>
+        </form>
+    {% else %}
+        <div class="small" style="margin-top:12px;">
+            Тест уже назначен сотрудникам. Редактирование вопросов недоступно.
+        </div>
+        <div class="actions" style="margin-top:12px;">
+            <a class="btn secondary" href="{% url 'manager_dashboard' %}">Назад</a>
+        </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>Текущие вопросы</h2>
+    {% if questions %}
+        {% for q in questions %}
+            <div style="margin-bottom:12px;">
+                <div><strong>{{ q.text }}</strong> <span class="small">({{ q.get_type_display }})</span></div>
+                {% if q.image %}
+                    <div class="small">Есть файл</div>
+                {% endif %}
+                {% if q.type == 'SINGLE' or q.type == 'MULTI' %}
+                    <ul class="small">
+                        {% for a in q.answers.all %}
+                            <li>{% if a.is_correct %}✓{% endif %} {{ a.text }}</li>
+                        {% endfor %}
+                    </ul>
+                {% elif q.type == 'MATCHING' %}
+                    <ul class="small">
+                        {% for pair in q.matching_pairs.all %}
+                            <li>{{ pair.left_text }} — {{ pair.right_text }}</li>
+                        {% endfor %}
+                    </ul>
+                {% elif q.type == 'ORDERING' %}
+                    <ul class="small">
+                        {% for item in q.ordering_items.all %}
+                            <li>{{ item.position }}. {{ item.text }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="small">Ответ проверяется вручную.</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="small">Вопросов пока нет.</div>
+    {% endif %}
+</div>
+
+<script>
+    (function () {
+        var typeSelect = document.getElementById('{{ q_form.type.id_for_label }}');
+        if (!typeSelect) {
+            return;
+        }
+        var blocks = document.querySelectorAll('[data-question-block]');
+        var answersBlock = document.getElementById('block-answers');
+
+        function toggleBlocks() {
+            var value = typeSelect.value;
+            blocks.forEach(function (block) {
+                var types = block.getAttribute('data-question-block').split(' ');
+                block.style.display = types.indexOf(value) >= 0 ? 'block' : 'none';
+            });
+        }
+
+        function enforceSingleCorrect(event) {
+            if (typeSelect.value !== 'SINGLE') {
+                return;
+            }
+            if (!event.target || event.target.type !== 'checkbox') {
+                return;
+            }
+            if (!event.target.checked) {
+                return;
+            }
+            var checkboxes = answersBlock.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(function (checkbox) {
+                if (checkbox !== event.target) {
+                    checkbox.checked = false;
+                }
+            });
+        }
+
+        if (answersBlock) {
+            answersBlock.addEventListener('change', enforceSingleCorrect);
+        }
+        document.querySelectorAll('[data-formset]').forEach(function (container) {
+            var totalInput = container.querySelector('input[name$="-TOTAL_FORMS"]');
+            var items = container.querySelector('[data-formset-items]');
+            var template = container.querySelector('template[data-formset-template]');
+            var addButton = container.querySelector('[data-formset-add]');
+            if (!totalInput || !items || !template || !addButton) {
+                return;
+            }
+            addButton.addEventListener('click', function () {
+                var index = parseInt(totalInput.value, 10);
+                var html = template.innerHTML.replace(/__prefix__/g, index);
+                var wrapper = document.createElement('div');
+                wrapper.innerHTML = html.trim();
+                var newItem = wrapper.firstElementChild;
+                if (!newItem) {
+                    return;
+                }
+                items.appendChild(newItem);
+                totalInput.value = index + 1;
+            });
+        });
+        typeSelect.addEventListener('change', toggleBlocks);
+        toggleBlocks();
+    })();
+</script>
+{% endblock %}

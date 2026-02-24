@@ -1,0 +1,59 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Задание: {{ task.title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>{{ task.title }}</h1>
+    <div class="small">Тип: {{ task.get_task_type_display }} · Макс. балл: {{ task.max_score }}</div>
+    <div class="small">Срок: {{ assignment.due_date|date:"d.m.Y"|default:"—" }}</div>
+    <div style="margin-top:12px;">{{ task.description }}</div>
+    {% if task.criteria %}
+        <div style="margin-top:12px;">
+            <strong>Критерии:</strong> {{ task.criteria }}
+        </div>
+    {% endif %}
+    {% if task.attachment %}
+        <div style="margin-top:12px;">
+            <strong>Файл задания:</strong>
+            <a href="{{ task.attachment.url }}" target="_blank" rel="noopener">Скачать / открыть</a>
+        </div>
+    {% endif %}
+    <div class="actions">
+        <a class="btn secondary" href="{% url 'employee_course_detail' task.course.id %}">Назад</a>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Сдать задание</h2>
+    {% if submission %}
+        <div class="small">Последняя сдача: {{ submission.submitted_at|date:"d.m.Y H:i" }}</div>
+        <div class="small">Статус: {{ submission.get_status_display }}</div>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data" style="margin-top:14px;">
+        {% csrf_token %}
+        {% if form.errors %}
+            <div class="errorlist">{{ form.errors }}</div>
+        {% endif %}
+        <div style="margin-bottom:12px;">
+            <label for="{{ form.content.id_for_label }}">Ответ</label>
+            {{ form.content }}
+        </div>
+        <div style="margin-bottom:12px;">
+            <label for="{{ form.file.id_for_label }}">Файл</label>
+            {{ form.file }}
+        </div>
+        <div class="actions">
+            <button type="submit">Отправить</button>
+        </div>
+    </form>
+</div>
+
+{% if review %}
+    <div class="card">
+        <h2>Комментарий менеджера</h2>
+        <div class="small">Оценка: {{ review.rating|default:"—" }}</div>
+        <div style="margin-top:8px;">{{ review.comment }}</div>
+    </div>
+{% endif %}
+{% endblock %}

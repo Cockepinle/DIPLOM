@@ -1,0 +1,197 @@
+{% extends "manager/base.html" %}
+
+{% block title %}{% if is_edit %}Редактировать лекцию{% else %}Создать лекцию{% endif %}{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .editor-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px;
+        border-radius: 12px;
+        background: var(--nav-bg);
+        margin-bottom: 12px;
+    }
+    .editor-toolbar button {
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: none;
+        background: var(--input-bg);
+        color: var(--input-text);
+        cursor: pointer;
+        font-weight: 600;
+    }
+    .editor-toolbar input[type="color"] {
+        width: 40px;
+        height: 32px;
+        padding: 0;
+        border: none;
+        background: transparent;
+    }
+    .editor-shell {
+        border-radius: 14px;
+        border: 1px solid var(--card-border);
+        background: var(--card-bg);
+        padding: 14px;
+    }
+    .editor {
+        min-height: 220px;
+        outline: none;
+        line-height: 1.6;
+    }
+    .editor img {
+        max-width: 100%;
+        border-radius: 12px;
+        margin: 8px 0;
+    }
+    .hint {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 6px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>{% if is_edit %}Редактировать лекцию{% else %}Создать лекцию{% endif %}</h1>
+    <form method="post" enctype="multipart/form-data" id="materialForm">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="grid">
+            <div>
+                <label for="{{ form.course.id_for_label }}">Курс</label>
+                {{ form.course }}
+                {{ form.course.errors }}
+            </div>
+            <div>
+                <label for="{{ form.test.id_for_label }}">Тест (необязательно)</label>
+                {{ form.test }}
+                {{ form.test.errors }}
+            </div>
+            <div>
+                <label for="{{ form.material_type.id_for_label }}">Тип материала</label>
+                {{ form.material_type }}
+                {{ form.material_type.errors }}
+            </div>
+            <div>
+                <label for="{{ form.order.id_for_label }}">Порядок</label>
+                {{ form.order }}
+                {{ form.order.errors }}
+            </div>
+            <div>
+                <label for="{{ form.is_required.id_for_label }}">Обязательный</label>
+                {{ form.is_required }}
+            </div>
+            <div>
+                <label for="{{ form.accent_color.id_for_label }}">Акцентный цвет</label>
+                {{ form.accent_color }}
+                {{ form.accent_color.errors }}
+            </div>
+        </div>
+
+        <div style="margin-top:14px;">
+            <label for="{{ form.title.id_for_label }}">Название</label>
+            {{ form.title }}
+            {{ form.title.errors }}
+        </div>
+
+        <div style="margin-top:14px;">
+            <label for="{{ form.url.id_for_label }}">Ссылка (если нужно)</label>
+            {{ form.url }}
+            {{ form.url.errors }}
+        </div>
+
+        <div style="margin-top:14px;">
+            <label for="{{ form.image.id_for_label }}">Изображение</label>
+            {{ form.image }}
+            {{ form.image.errors }}
+        </div>
+
+        <div style="margin-top:14px;">
+            <label for="{{ form.file.id_for_label }}">Файл</label>
+            {{ form.file }}
+            {{ form.file.errors }}
+        </div>
+
+        <div style="margin-top:18px;">
+            <label>Содержание лекции</label>
+            <div class="editor-toolbar">
+                <button type="button" data-cmd="bold">Ж</button>
+                <button type="button" data-cmd="italic">К</button>
+                <button type="button" data-cmd="underline">Ч</button>
+                <button type="button" data-cmd="insertUnorderedList">Список</button>
+                <button type="button" data-cmd="formatBlock" data-value="h2">H2</button>
+                <button type="button" data-cmd="formatBlock" data-value="blockquote">Цитата</button>
+                <input type="color" data-cmd="foreColor" title="Цвет текста">
+                <input type="color" data-cmd="hiliteColor" title="Цвет фона">
+                <button type="button" data-link>Ссылка</button>
+                <button type="button" data-image>Картинка</button>
+                <button type="button" data-cmd="removeFormat">Очистить</button>
+            </div>
+            <div class="editor-shell">
+                <div class="editor" id="contentEditor" contenteditable="true"></div>
+            </div>
+            {{ form.content.errors }}
+            <textarea name="content" id="contentField" style="display:none;">{{ form.content.value|default_if_none:''|safe }}</textarea>
+            <div class="hint">Поддерживается вставка изображений по ссылке и базовое форматирование.</div>
+        </div>
+
+        <div class="actions" style="margin-top:18px;">
+            <button type="submit">{% if is_edit %}Сохранить{% else %}Создать лекцию{% endif %}</button>
+            {% if course %}
+                <a class="btn secondary" href="{% url 'manager_course_detail' course.id %}">Назад</a>
+            {% else %}
+                <a class="btn secondary" href="{% url 'manager_material_list' %}">Назад</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<script>
+    (function () {
+        const editor = document.getElementById('contentEditor');
+        const textarea = document.getElementById('contentField');
+        const form = document.getElementById('materialForm');
+        if (editor && textarea) {
+            editor.innerHTML = textarea.value || '';
+        }
+        function exec(cmd, value) {
+            document.execCommand(cmd, false, value);
+            editor && editor.focus();
+        }
+        document.querySelectorAll('[data-cmd]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const cmd = btn.getAttribute('data-cmd');
+                const value = btn.getAttribute('data-value');
+                exec(cmd, value);
+            });
+        });
+        document.querySelectorAll('input[data-cmd]').forEach((input) => {
+            input.addEventListener('input', () => {
+                exec(input.getAttribute('data-cmd'), input.value);
+            });
+        });
+        document.querySelectorAll('[data-link]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const url = prompt('Введите ссылку');
+                if (url) exec('createLink', url);
+            });
+        });
+        document.querySelectorAll('[data-image]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const url = prompt('Ссылка на изображение');
+                if (url) exec('insertImage', url);
+            });
+        });
+        if (form) {
+            form.addEventListener('submit', () => {
+                if (editor && textarea) {
+                    textarea.value = editor.innerHTML.trim();
+                }
+            });
+        }
+    })();
+</script>
+{% endblock %}

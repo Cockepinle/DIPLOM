@@ -1,0 +1,96 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Черновики{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Черновики</h1>
+    <div class="small">Здесь можно опубликовать черновые тесты и задания.</div>
+</div>
+
+<div class="card">
+    <h2>Черновики тестов</h2>
+    {% if tests %}
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="text-align:left;">
+                    <th style="padding:8px 6px;">Тест</th>
+                    <th style="padding:8px 6px;">Курс</th>
+                    <th style="padding:8px 6px;">Срок</th>
+                    <th style="padding:8px 6px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for test in tests %}
+                    <tr style="border-top:1px solid rgba(255,255,255,0.12);">
+                        <td style="padding:8px 6px;">{{ test.title }}</td>
+                        <td style="padding:8px 6px;">{{ test.course.title }}</td>
+                        <td style="padding:8px 6px;">{{ test.due_date|date:"d.m.Y"|default:"—" }}</td>
+                        <td style="padding:8px 6px;">
+                            <div class="actions" style="gap:6px; flex-wrap:wrap;">
+                                <a class="btn secondary" href="{% url 'manager_test_edit' test.id %}">Изменить</a>
+                                <form method="post" action="{% url 'manager_test_publish' test.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    <button type="submit">Опубликовать</button>
+                                </form>
+                                <form method="post" action="{% url 'manager_test_delete' test.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    <button type="submit">Удалить</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="small">Черновиков тестов нет.</div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>Черновики заданий</h2>
+    {% if tasks %}
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="text-align:left;">
+                    <th style="padding:8px 6px;">Задание</th>
+                    <th style="padding:8px 6px;">Курс</th>
+                    <th style="padding:8px 6px;">Срок</th>
+                    <th style="padding:8px 6px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in tasks %}
+                    <tr style="border-top:1px solid rgba(255,255,255,0.12);">
+                        <td style="padding:8px 6px;">{{ task.title }}</td>
+                        <td style="padding:8px 6px;">
+                            {% if task.course %}{{ task.course.title }}{% else %}—{% endif %}
+                        </td>
+                        <td style="padding:8px 6px;">{{ task.due_date|date:"d.m.Y"|default:"—" }}</td>
+                        <td style="padding:8px 6px;">
+                            <div class="actions" style="gap:6px; flex-wrap:wrap;">
+                                <a class="btn secondary" href="{% url 'manager_task_edit' task.id %}">Изменить</a>
+                                <form method="post" action="{% url 'manager_task_publish' task.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    <button type="submit">Опубликовать</button>
+                                </form>
+                                <form method="post" action="{% url 'manager_task_delete' task.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    <button type="submit">Удалить</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="small">Черновиков заданий нет.</div>
+    {% endif %}
+</div>
+{% endblock %}

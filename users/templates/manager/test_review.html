@@ -1,0 +1,241 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Проверка попытки{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .review-shell {
+        display: grid;
+        gap: 16px;
+    }
+    .question-block {
+        margin-top: 12px;
+        padding: 18px 18px 10px;
+        border-radius: 18px;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+    }
+    .question-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 12px;
+    }
+    .options {
+        display: grid;
+        gap: 10px;
+        padding-bottom: 6px;
+    }
+    .option {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        background: var(--nav-bg);
+    }
+    .option.is-correct {
+        background: rgba(41, 242, 179, 0.12);
+        box-shadow: inset 0 0 0 1px rgba(41, 242, 179, 0.35);
+    }
+    .option.is-wrong {
+        background: rgba(255, 87, 87, 0.12);
+        box-shadow: inset 0 0 0 1px rgba(255, 87, 87, 0.35);
+    }
+    .option input:disabled {
+        opacity: 0.6;
+    }
+    .option-text {
+        font-size: 14px;
+        color: var(--text);
+    }
+    .readonly-field {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--card-border);
+        background: var(--input-bg);
+        color: var(--input-text);
+        font-size: 14px;
+    }
+    .readonly-field.is-correct {
+        border-color: rgba(41, 242, 179, 0.55);
+        background: rgba(41, 242, 179, 0.12);
+    }
+    .readonly-field.is-wrong {
+        border-color: rgba(255, 87, 87, 0.55);
+        background: rgba(255, 87, 87, 0.12);
+    }
+    .readonly-field:disabled {
+        opacity: 0.85;
+    }
+    .matching-shell {
+        display: grid;
+        gap: 10px;
+    }
+    .match-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        align-items: center;
+    }
+    .match-left {
+        font-weight: 600;
+    }
+    .match-drop {
+        min-height: 40px;
+        padding: 8px 12px;
+        border-radius: 12px;
+        border: 1px dashed var(--card-border);
+        background: var(--input-bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: var(--text);
+    }
+    .match-drop.is-correct {
+        border-color: rgba(41, 242, 179, 0.65);
+        background: rgba(41, 242, 179, 0.12);
+    }
+    .match-drop.is-wrong {
+        border-color: rgba(255, 87, 87, 0.65);
+        background: rgba(255, 87, 87, 0.12);
+    }
+    .match-drop.empty {
+        color: var(--muted);
+    }
+    .correct-tag {
+        margin-left: auto;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        background: rgba(41, 242, 179, 0.18);
+        color: #29f2b3;
+    }
+    .match-meta {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Проверка попытки</h1>
+    <div class="small">Тест: {{ test.title }}</div>
+    <div class="small">Сотрудник: {{ result.user.last_name }} {{ result.user.first_name }}</div>
+    <div class="small">Попытка: {{ result.attempt_number }}</div>
+    <div class="actions">
+        <a class="btn secondary" href="{% url 'manager_test_results' test.id %}">Назад к списку</a>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Решение</h2>
+    {% if error %}
+        <div class="errorlist" style="margin-top:12px;">{{ error }}</div>
+    {% endif %}
+    <form method="post" style="margin-top:12px;">
+        {% csrf_token %}
+        <div class="grid">
+            <div>
+                <label for="status">Статус</label>
+                <select name="status" id="status">
+                    <option value="PASSED" {% if result.status == 'PASSED' %}selected{% endif %}>Проверено · Пройден</option>
+                    <option value="FAILED" {% if result.status == 'FAILED' %}selected{% endif %}>Проверено · Провален</option>
+                    <option value="RETURNED" {% if result.status == 'RETURNED' %}selected{% endif %}>На пересдаче</option>
+                </select>
+            </div>
+            <div>
+                <label for="score">Результат (%)</label>
+                <input type="number" name="score" id="score" min="0" max="100" value="{{ result.score|default_if_none:'' }}">
+            </div>
+        </div>
+        <div style="margin-top:14px;">
+            <label for="comment">Комментарий</label>
+            <textarea name="comment" id="comment" rows="4">{{ feedback.comment|default_if_none:'' }}</textarea>
+        </div>
+        <div class="actions">
+            <button type="submit">Сохранить</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Ответы сотрудника</h2>
+    <div class="review-shell">
+        {% for item in result_questions %}
+            <section class="question-block">
+                <div class="question-title">{{ forloop.counter }}. {{ item.question.text }}</div>
+                {% if item.type == 'SINGLE' or item.type == 'MULTI' %}
+                    <div class="options">
+                        {% for answer in item.answers %}
+                            <label class="option{% if answer.id in item.correct_ids %} is-correct{% elif answer.id in item.selected_ids %} is-wrong{% endif %}">
+                                {% if item.type == 'MULTI' %}
+                                    <input type="checkbox" disabled {% if answer.id in item.selected_ids %}checked{% endif %}>
+                                {% else %}
+                                    <input type="radio" disabled {% if answer.id in item.selected_ids %}checked{% endif %}>
+                                {% endif %}
+                                <span class="option-text">{{ answer.text }}</span>
+                                {% if answer.id in item.correct_ids %}
+                                    <span class="correct-tag">правильный</span>
+                                {% endif %}
+                            </label>
+                        {% endfor %}
+                    </div>
+                {% elif item.type == 'MATCHING' %}
+                    <div class="options">
+                        <div class="matching-shell">
+                            {% for row in item.matching_rows %}
+                                <div class="match-row" style="margin-bottom:8px;">
+                                    <div class="match-left">{{ row.left_text }}</div>
+                                    <div class="match-drop {% if not row.selected_right_text %}empty{% endif %}{% if row.selected_right_id %}{% if row.selected_right_id == row.right_id %} is-correct{% else %} is-wrong{% endif %}{% endif %}">
+                                        {{ row.selected_right_text|default:"—" }}
+                                    </div>
+                                </div>
+                                <div class="match-meta">Правильно: {{ row.right_text }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% elif item.type == 'ORDERING' %}
+                    <div class="options">
+                        {% for row in item.ordering_rows %}
+                            <div class="grid" style="margin-bottom:8px;">
+                                <div style="font-weight:600;">{{ row.text }}</div>
+                                <div>
+                                    <input
+                                        class="readonly-field{% if row.user_position %}{% if row.user_position == row.position %} is-correct{% else %} is-wrong{% endif %}{% endif %}"
+                                        type="number"
+                                        disabled
+                                        value="{{ row.user_position|default_if_none:'' }}"
+                                    >
+                                    <div class="match-meta">Правильная позиция: {{ row.position }}</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% elif item.type == 'SHORT' %}
+                    <div class="options">
+                        <input
+                            class="readonly-field"
+                            type="text"
+                            disabled
+                            value="{{ item.answer_text|default_if_none:'' }}"
+                        >
+                    </div>
+                {% elif item.type == 'LONG' %}
+                    <div class="options">
+                        <textarea class="readonly-field" rows="4" disabled>{{ item.answer_text|default_if_none:'' }}</textarea>
+                        {% if item.answer_file %}
+                            <div class="small">
+                                <a href="{{ item.answer_file.url }}" target="_blank" rel="noopener">Файл ответа</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </section>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

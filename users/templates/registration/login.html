@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Вход в систему</title>
+    <script>
+        (function () {
+            const stored = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', stored);
+        })();
+    </script>
+
+    <style>
+        :root {
+            --bg: linear-gradient(135deg, #2b1055, #7597de);
+            --text: #fff;
+            --muted: #e0e0e0;
+            --card-bg: rgba(255, 255, 255, 0.15);
+            --card-border: rgba(255, 255, 255, 0.2);
+            --input-bg: rgba(255, 255, 255, 0.25);
+            --input-text: #fff;
+            --input-border: transparent;
+            --btn-bg: linear-gradient(135deg, #6a11cb, #2575fc);
+            --btn-text: #fff;
+            --link: #e0e0ff;
+            --danger-bg: rgba(255, 0, 0, 0.2);
+            --danger-text: #ffdede;
+        }
+        :root[data-theme="light"] {
+            --bg: #f7f7fb;
+            --text: #111;
+            --muted: #5a5a68;
+            --card-bg: #ffffff;
+            --card-border: rgba(0, 0, 0, 0.12);
+            --input-bg: #f3f3f6;
+            --input-text: #111;
+            --input-border: rgba(0, 0, 0, 0.15);
+            --btn-bg: #111;
+            --btn-text: #fff;
+            --link: #111;
+            --danger-bg: #ffe3e3;
+            --danger-text: #b11;
+        }
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text);
+        }
+
+        .login-card {
+            width: 360px;
+            padding: 40px;
+            border-radius: 20px;
+            background: var(--card-bg);
+            backdrop-filter: blur(15px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+            color: var(--text);
+            text-align: center;
+            border: 1px solid var(--card-border);
+        }
+
+        h2 {
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--input-border);
+            background: var(--input-bg);
+            color: var(--input-text);
+            font-size: 14px;
+            outline: none;
+        }
+
+        input::placeholder {
+            color: var(--muted);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .error {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 10px;
+            background: var(--danger-bg);
+            color: var(--danger-text);
+            font-size: 14px;
+        }
+
+        .footer {
+            margin-top: 15px;
+            font-size: 13px;
+        }
+
+        a {
+            color: var(--link);
+            text-decoration: none;
+        }
+        .theme-toggle {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            height: 32px;
+            padding: 0 12px;
+            border-radius: 999px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            width: auto;
+        }
+        .theme-toggle .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--btn-bg);
+        }
+    </style>
+</head>
+
+<body>
+<button type="button" class="theme-toggle" id="themeToggle">Тема</button>
+
+<div class="login-card">
+    <h2>Вход в систему</h2>
+
+    {% if form.errors %}
+        <div class="error">
+            Неверный email или пароль
+        </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'login' %}">
+        {% csrf_token %}
+
+        {% if next %}
+            <input type="hidden" name="next" value="{{ next }}">
+        {% endif %}
+
+        <input
+            type="text"
+            name="username"
+            placeholder="Email"
+            required
+        >
+
+        <input
+            type="password"
+            name="password"
+            placeholder="Пароль"
+            required
+        >
+
+        <button type="submit">Войти</button>
+    </form>
+
+    <div class="footer">
+        Нет аккаунта?
+        <a href="{% url 'register' %}">Регистрация</a>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const root = document.documentElement;
+        const btn = document.getElementById('themeToggle');
+        function applyTheme(theme) {
+            root.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            btn.innerHTML = `<span class="dot"></span><span class="label">${theme === 'light' ? 'Светлая' : 'Темная'}</span>`;
+            btn.title = 'Сменить тему';
+        }
+        const current = localStorage.getItem('theme') || 'dark';
+        applyTheme(current);
+        btn.addEventListener('click', () => {
+            const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+            applyTheme(next);
+        });
+    })();
+</script>
+</body>
+</html>

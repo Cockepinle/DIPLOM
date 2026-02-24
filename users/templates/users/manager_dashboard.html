@@ -1,0 +1,28 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Панель менеджера{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Панель менеджера</h1>
+    <div class="grid">
+        <a class="btn" href="{% url 'manager_course_create' %}">Создать курс</a>
+        <a class="btn" href="{% url 'manager_course_list' %}">Мои курсы</a>
+        <a class="btn" href="{% url 'manager_lesson_create' %}">Создать модуль</a>
+        <a class="btn" href="{% url 'manager_lesson_list' %}">Мои модули</a>
+        <a class="btn" href="{% url 'manager_test_create' %}">Создать тест</a>
+        <a class="btn" href="{% url 'manager_task_create' %}">Создать задание</a>
+        <a class="btn secondary" href="{% url 'profile' %}">Профиль</a>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Подсказка</h2>
+    <div class="small">
+        1. Создайте курс и выберите специальность сотрудников.
+        2. Откройте курс → назначьте сотрудников и установите срок.
+        3. Создайте модули (лекции) и добавьте в них тесты.
+        4. При необходимости назначайте отдельные задания.
+    </div>
+</div>
+{% endblock %}

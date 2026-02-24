@@ -1,0 +1,175 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Урок: {{ lesson.title }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .page-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+    .page-tab {
+        padding: 6px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--card-border);
+        background: var(--nav-bg);
+        color: var(--nav-text);
+        cursor: pointer;
+        font-size: 13px;
+    }
+    .page-tab.active {
+        background: var(--nav-active-bg);
+        color: var(--nav-active-text);
+    }
+    .lesson-block {
+        border-radius: 16px;
+        border: 1px solid var(--card-border);
+        background: var(--card-bg);
+        padding: 16px;
+        margin-bottom: 12px;
+    }
+    .lesson-block img {
+        max-width: 100%;
+        border-radius: 12px;
+        margin-top: 8px;
+    }
+    .lesson-block video {
+        width: 100%;
+        border-radius: 12px;
+        margin-top: 8px;
+    }
+    .lesson-block iframe {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        border: none;
+        border-radius: 12px;
+        margin-top: 8px;
+    }
+    .lesson-block a {
+        color: var(--nav-text);
+    }
+    .lesson-block .btn {
+        display: inline-flex;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: var(--btn-bg);
+        color: var(--btn-text);
+        text-decoration: none;
+        font-size: 13px;
+        margin-top: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>{{ lesson.title }}</h1>
+    <div class="small">{{ lesson.description|default:"—" }}</div>
+    <div class="actions">
+        <a class="btn secondary" href="{% url 'employee_course_detail' lesson.course_id %}">Вернуться к курсу</a>
+    </div>
+</div>
+
+{% if pages %}
+    <div class="card">
+        <div class="page-tabs" id="pageTabs">
+            {% for page in pages %}
+                <button class="page-tab{% if forloop.first %} active{% endif %}" data-page="{{ forloop.counter0 }}">
+                    {{ page.title|default:"Страница" }} {{ forloop.counter }}
+                </button>
+            {% endfor %}
+        </div>
+        {% for page in pages %}
+            <div class="lesson-page" data-page="{{ forloop.counter0 }}" {% if not forloop.first %}style="display:none;"{% endif %}>
+                {% for block in page.blocks %}
+                    <div class="lesson-block" {% if block.accent %}style="border-left:6px solid {{ block.accent }};"{% endif %}>
+                        {% if block.type == 'text' or block.type == 'instruction' %}
+                            <div>{{ block.html|safe }}</div>
+                        {% elif block.type == 'image' %}
+                            <img src="{{ block.url }}" alt="Изображение">
+                            {% if block.name %}<div class="small">{{ block.name }}</div>{% endif %}
+                        {% elif block.type == 'file' %}
+                            <div class="small">Файл: <a href="{{ block.url }}" target="_blank" rel="noopener">{{ block.name|default:"Скачать" }}</a></div>
+                        {% elif block.type == 'video' %}
+                            {% if block.source == 'file' %}
+                                <video controls src="{{ block.url }}"></video>
+                            {% elif block.embed_url %}
+                                <iframe src="{{ block.embed_url }}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            {% else %}
+                                <div class="video-embed" data-video-url="{{ block.url }}"></div>
+                                <div class="small">Видео: <a href="{{ block.url }}" target="_blank" rel="noopener">{{ block.url }}</a></div>
+                            {% endif %}
+                        {% elif block.type == 'button' %}
+                            <a class="btn" href="{{ block.url }}" target="_blank" rel="noopener">{{ block.text|default:"Перейти" }}</a>
+                        {% elif block.type == 'test' %}
+                            <div class="small">Тест: {{ block.title|default:"—" }}</div>
+                            {% if block.test_id %}
+                                <a class="btn" href="{% url 'employee_test_take' block.test_id %}">Пройти тест</a>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="card">
+        <div class="small">Страниц пока нет.</div>
+    </div>
+{% endif %}
+
+<script>
+    document.querySelectorAll('.page-tab').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const page = btn.getAttribute('data-page');
+            document.querySelectorAll('.page-tab').forEach((el) => el.classList.remove('active'));
+            btn.classList.add('active');
+            document.querySelectorAll('.lesson-page').forEach((section) => {
+                section.style.display = section.getAttribute('data-page') === page ? 'block' : 'none';
+            });
+        });
+    });
+
+    function getVideoEmbedUrl(url) {
+        if (!url) return '';
+        try {
+            const parsed = new URL(url);
+            const host = parsed.hostname.toLowerCase();
+            if (host.includes('youtu.be')) {
+                const id = parsed.pathname.replace('/', '');
+                return id ? `https://www.youtube.com/embed/${id}` : '';
+            }
+            if (host.includes('youtube.com')) {
+                const id = parsed.searchParams.get('v') || '';
+                if (id) return `https://www.youtube.com/embed/${id}`;
+                const parts = parsed.pathname.split('/').filter(Boolean);
+                if (parts[0] === 'embed' && parts[1]) {
+                    return `https://www.youtube.com/embed/${parts[1]}`;
+                }
+            }
+            if (host.includes('vimeo.com')) {
+                const parts = parsed.pathname.split('/').filter(Boolean);
+                const id = parts[0] && /^[0-9]+$/.test(parts[0]) ? parts[0] : '';
+                return id ? `https://player.vimeo.com/video/${id}` : '';
+            }
+        } catch (err) {
+            return '';
+        }
+        return '';
+    }
+
+    document.querySelectorAll('.video-embed[data-video-url]').forEach((el) => {
+        const url = el.getAttribute('data-video-url');
+        const embed = getVideoEmbedUrl(url);
+        if (embed) {
+            const iframe = document.createElement('iframe');
+            iframe.src = embed;
+            iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+            iframe.allowFullscreen = true;
+            el.appendChild(iframe);
+        }
+    });
+</script>
+{% endblock %}

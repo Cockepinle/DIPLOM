@@ -1,0 +1,261 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Профиль{% endblock %}
+
+{% block extra_styles %}
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        .profile-shell {
+            width: min(920px, 100%);
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 24px;
+            margin: 0 auto;
+        }
+
+        .card {
+            border-radius: 22px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            box-shadow: 0 10px 36px rgba(0, 0, 0, 0.2);
+            padding: 28px;
+            border: 1px solid var(--card-border);
+        }
+
+        .profile-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .avatar-wrap {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            padding: 4px;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+            margin-bottom: 16px;
+        }
+
+        .avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+            background: var(--input-bg);
+        }
+
+        .avatar-placeholder {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            font-size: 42px;
+            font-weight: 600;
+            background: var(--input-bg);
+        }
+
+        h2 {
+            margin: 8px 0 6px;
+            font-weight: 600;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            background: var(--nav-bg);
+            color: var(--nav-text);
+        }
+
+        .meta {
+            margin-top: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--muted);
+        }
+
+        .form-title {
+            margin: 0 0 16px;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        label {
+            font-size: 12px;
+            color: var(--muted);
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--input-border);
+            background: var(--input-bg);
+            color: var(--input-text);
+            font-size: 14px;
+            outline: none;
+        }
+        select {
+            color-scheme: dark;
+        }
+        :root[data-theme="light"] select {
+            color-scheme: light;
+        }
+        select option,
+        select optgroup {
+            background: var(--select-option-bg);
+            color: var(--select-option-text);
+        }
+        select option:checked,
+        select option:hover {
+            background: #000;
+            color: #fff;
+        }
+
+        input[type="file"] {
+            padding: 8px;
+            cursor: pointer;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .actions form {
+            flex: 1;
+            margin: 0;
+        }
+
+        button, .link-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .link-btn {
+            background: rgba(255, 255, 255, 0.18);
+        }
+
+        .success {
+            margin-top: 12px;
+            font-size: 13px;
+            color: #c6ffdd;
+            background: rgba(46, 204, 113, 0.2);
+            padding: 10px 12px;
+            border-radius: 10px;
+        }
+
+        .errors {
+            margin-bottom: 12px;
+            font-size: 13px;
+            color: #ffdede;
+            background: rgba(255, 0, 0, 0.2);
+            padding: 10px 12px;
+            border-radius: 10px;
+        }
+
+        @media (max-width: 820px) {
+            .profile-shell {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-shell">
+    <div class="card profile-header">
+        <div class="avatar-wrap">
+            {% if user.avatar %}
+                <img class="avatar" src="{{ user.avatar.url }}" alt="avatar">
+            {% else %}
+                <div class="avatar-placeholder">
+                    {{ user.first_name|default:"?"|slice:":1" }}{{ user.last_name|default:""|slice:":1" }}
+                </div>
+            {% endif %}
+        </div>
+
+        <h2>{{ user.last_name }} {{ user.first_name }}</h2>
+        <div class="role-badge">{{ user.get_role_display }}</div>
+
+        <div class="meta">
+            <div>{{ user.email }}</div>
+            <div>{{ user.department|default:"—" }} · {{ user.position|default:"—" }}</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="form-title">Настройки профиля</div>
+
+        {% if form.errors %}
+            <div class="errors">{{ form.errors }}</div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <label for="{{ form.avatar.id_for_label }}">Фото профиля</label>
+            {{ form.avatar }}
+
+            <div class="grid" style="margin-top: 14px;">
+                <div>
+                    <label for="{{ form.first_name.id_for_label }}">Имя</label>
+                    {{ form.first_name }}
+                </div>
+                <div>
+                    <label for="{{ form.last_name.id_for_label }}">Фамилия</label>
+                    {{ form.last_name }}
+                </div>
+                <div>
+                    <label for="{{ form.department.id_for_label }}">Отдел</label>
+                    {{ form.department }}
+                </div>
+                <div>
+                    <label for="{{ form.position.id_for_label }}">Должность</label>
+                    {{ form.position }}
+                </div>
+            </div>
+
+            <div class="actions">
+                <button type="submit">Сохранить</button>
+            </div>
+
+            {% if saved %}
+                <div class="success">Профиль обновлён</div>
+            {% endif %}
+        </form>
+
+        <div class="actions">
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="link-btn">Выйти</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

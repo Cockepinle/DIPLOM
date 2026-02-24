@@ -1,0 +1,22 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Профиль сотрудника{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Профиль сотрудника</h1>
+    <div class="small">Здесь можно обновить данные сотрудника и его статус.</div>
+</div>
+
+<div class="card">
+    <div class="small" style="margin-bottom:12px;">Почта: {{ student.email }}</div>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="actions">
+            <button type="submit">Сохранить</button>
+            <a class="btn secondary" href="{% url 'manager_students_list' %}">Назад</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

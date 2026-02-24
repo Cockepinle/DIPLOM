@@ -1,0 +1,41 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Список учащихся{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Список учащихся</h1>
+    <div class="small">Все сотрудники с ролью "Сотрудник".</div>
+</div>
+
+<div class="card">
+    {% if students %}
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="text-align:left;">
+                    <th style="padding:8px 6px;">Сотрудник</th>
+                    <th style="padding:8px 6px;">Почта</th>
+                    <th style="padding:8px 6px;">Специальность</th>
+                    <th style="padding:8px 6px;">Должность</th>
+                    <th style="padding:8px 6px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                    <tr style="border-top:1px solid rgba(255,255,255,0.12);">
+                        <td style="padding:8px 6px;">{{ student.last_name }} {{ student.first_name }}</td>
+                        <td style="padding:8px 6px;">{{ student.email }}</td>
+                        <td style="padding:8px 6px;">{{ student.specialty|default:"—" }}</td>
+                        <td style="padding:8px 6px;">{{ student.position|default:"—" }}</td>
+                        <td style="padding:8px 6px;">
+                            <a class="btn secondary" href="{% url 'manager_student_detail' student.id %}">Профиль</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="small">Сотрудников пока нет.</div>
+    {% endif %}
+</div>
+{% endblock %}

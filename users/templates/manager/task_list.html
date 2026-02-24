@@ -1,0 +1,66 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Назначение заданий{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Назначение заданий</h1>
+    <div class="actions">
+        <a class="btn" href="{% url 'manager_task_create' %}">Создать задание</a>
+        <a class="btn secondary" href="{% url 'manager_dashboard' %}">Назад</a>
+    </div>
+</div>
+
+<div class="card">
+    {% if tasks %}
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="text-align:left;">
+                    <th style="padding:8px 6px;">Задание</th>
+                    <th style="padding:8px 6px;">Курс</th>
+                    <th style="padding:8px 6px;">Сотрудники</th>
+                    <th style="padding:8px 6px;">Назначений</th>
+                    <th style="padding:8px 6px;">Статус</th>
+                    <th style="padding:8px 6px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in tasks %}
+                    <tr style="border-top:1px solid rgba(255,255,255,0.12);">
+                        <td style="padding:8px 6px;">{{ task.title }}</td>
+                        <td style="padding:8px 6px;">
+                            {% if task.course %}{{ task.course.title }}{% else %}—{% endif %}
+                        </td>
+                        <td style="padding:8px 6px;">
+                            {% if task.assignments.all %}
+                                {% for assignment in task.assignments.all %}
+                                    {{ assignment.user.last_name }} {{ assignment.user.first_name }}{% if assignment.user.email %} ({{ assignment.user.email }}){% endif %}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <span class="small">Пока не назначено</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding:8px 6px;">{{ task.assignments_count }}</td>
+                        <td style="padding:8px 6px;">{{ task.is_published|yesno:"Опубликовано,Черновик" }}</td>
+                        <td style="padding:8px 6px;">
+                            <div class="actions" style="gap:6px; flex-wrap:wrap;">
+                                {% if task.submissions_count == 0 %}
+                                    <a class="btn secondary" href="{% url 'manager_task_edit' task.id %}">Изменить</a>
+                                {% endif %}
+                                <a class="btn secondary" href="{% url 'manager_task_assign' task.id %}">Выбрать сотрудников</a>
+                                <form method="post" action="{% url 'manager_task_delete' task.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    <button type="submit">Удалить</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="small">Заданий пока нет. Создайте первое.</div>
+    {% endif %}
+</div>
+{% endblock %}

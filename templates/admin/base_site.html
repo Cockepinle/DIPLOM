@@ -1,0 +1,21 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}Админка | {{ site_title|default:"Сайт" }}{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'admin/custom_admin.css' %}">
+{% endblock %}
+
+{% block branding %}
+<div class="admin-brand">
+    <div class="admin-brand__logo">AC</div>
+    <div class="admin-brand__text">
+        <div class="admin-brand__title">ArtCulinary</div>
+        <div class="admin-brand__subtitle">Панель управления</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

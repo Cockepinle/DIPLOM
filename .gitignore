@@ -1,0 +1,10 @@
+﻿venv/
+__pycache__/
+*.pyc
+*.pyd
+*.exe
+*.log
+*.sqlite3
+.env
+media/
+~$*

@@ -1,0 +1,47 @@
+{% extends "manager/base.html" %}
+
+{% block title %}{% if is_edit %}Редактировать курс{% else %}Создать курс{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>{% if is_edit %}Редактировать курс{% else %}Создать курс{% endif %}</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="grid">
+            <div>
+                <label for="{{ form.title.id_for_label }}">Название</label>
+                {{ form.title }}
+                {{ form.title.errors }}
+            </div>
+            <div>
+                <label for="{{ form.specialty.id_for_label }}">Специальность</label>
+                {{ form.specialty }}
+                {{ form.specialty.errors }}
+            </div>
+        </div>
+        <div style="margin-top:14px;">
+            <label for="{{ form.cover_image.id_for_label }}">Обложка курса</label>
+            {{ form.cover_image }}
+            {{ form.cover_image.errors }}
+        </div>
+        <div style="margin-top:14px;">
+            <label for="{{ form.description.id_for_label }}">Описание</label>
+            {{ form.description }}
+            {{ form.description.errors }}
+        </div>
+        <div style="margin-top:14px;">
+            <label for="{{ form.is_active.id_for_label }}">Активен</label>
+            {{ form.is_active }}
+        </div>
+        <div class="actions">
+            <button type="submit">{% if is_edit %}Сохранить{% else %}Создать{% endif %}</button>
+            {% if is_edit %}
+                <a class="btn secondary" href="{% url 'manager_course_detail' course.id %}">Назад</a>
+            {% else %}
+                <a class="btn secondary" href="{% url 'manager_dashboard' %}">Назад</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endblock %}

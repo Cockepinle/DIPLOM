@@ -1,0 +1,436 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Курс: {{ course.title }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .course-meta {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .course-meta .small {
+        background: rgba(0, 0, 0, 0.35);
+        padding: 6px 10px;
+        border-radius: 999px;
+    }
+    .data-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 10px;
+    }
+    .data-table thead th {
+        text-align: left;
+        padding: 4px 10px;
+        font-size: 12px;
+        letter-spacing: 0.02em;
+        opacity: 0.8;
+    }
+    .data-table tbody tr {
+        background: rgba(255, 255, 255, 0.06);
+        box-shadow: 0 6px 16px rgba(8, 12, 30, 0.18);
+    }
+    .data-table tbody td {
+        padding: 12px 12px;
+        vertical-align: middle;
+    }
+    .data-table tbody td:first-child {
+        border-top-left-radius: 12px;
+        border-bottom-left-radius: 12px;
+    }
+    .data-table tbody td:last-child {
+        border-top-right-radius: 12px;
+        border-bottom-right-radius: 12px;
+    }
+    .data-table .meta-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        font-size: 12px;
+    }
+    .data-table .module-link {
+        font-weight: 600;
+    }
+    .answer-line {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    .answer-correct {
+        color: #1fbf9e;
+        font-weight: 600;
+    }
+    .answer-wrong {
+        color: #f87171;
+        font-weight: 600;
+    }
+    .answer-tag {
+        margin-left: 6px;
+        font-size: 12px;
+        opacity: 0.85;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="padding:0; overflow:hidden;">
+    <div style="
+        min-height: 220px;
+        padding: 24px;
+        display:flex;
+        flex-direction:column;
+        justify-content:space-between;
+        background:
+            linear-gradient(135deg, rgba(17,17,17,0.55), rgba(17,17,17,0.25))
+            {% if course.cover_image %}, url('{{ course.cover_image.url }}'){% endif %};
+        background-size: cover;
+        background-position: center;
+    ">
+        <div style="display:flex; justify-content:flex-end;">
+            <div class="small" style="background: var(--card-bg); padding:6px 10px; border-radius:999px;">
+                {{ enrollment.get_status_display }}
+            </div>
+        </div>
+        <div>
+            <h1 style="margin:0 0 6px;">{{ course.title }}</h1>
+            <div class="small">{{ course.description|default:"Введите описание курса" }}</div>
+        </div>
+        <div class="course-meta">
+            <div class="small">Специальность: {{ course.specialty|default:"—" }}</div>
+            <div class="small">Срок: {{ enrollment.due_date|date:"d.m.Y"|default:"—" }}</div>
+            <div class="small">Создатель: {{ course.created_by.get_full_name|default:course.created_by.email }}</div>
+        </div>
+    </div>
+    <div class="actions" style="padding:16px 24px;">
+        <a class="btn secondary" href="{% url 'employee_dashboard' %}">К списку курсов</a>
+    </div>
+</div>
+
+{% if test_result %}
+    <div class="card">
+        <h2>Результат теста</h2>
+        <div class="small">
+            {{ test_result.test.title }} ·
+            {% if test_result.status == 'UNDER_REVIEW' %}
+                Ожидает проверки
+            {% elif test_result.status == 'PASSED' %}
+                Проверено{% if test_result.score != None %} · {% with score=test_result.score %}<span class="{% if score > test_result.test.success_threshold %}score-green{% elif score >= test_result.test.warning_threshold %}score-yellow{% else %}score-red{% endif %}">{{ score }}%</span>{% endwith %}{% endif %} · Пройден
+            {% elif test_result.status == 'FAILED' %}
+                Проверено{% if test_result.score != None %} · {% with score=test_result.score %}<span class="{% if score > test_result.test.success_threshold %}score-green{% elif score >= test_result.test.warning_threshold %}score-yellow{% else %}score-red{% endif %}">{{ score }}%</span>{% endwith %}{% endif %} · Провален
+            {% elif test_result.status == 'RETURNED' %}
+                На пересдаче
+            {% elif test_result.status == 'DECLINED' %}
+                Отказался от пересдачи
+            {% else %}
+                {% if test_result.score != None %}
+                    {% with score=test_result.score %}<span class="{% if score > test_result.test.success_threshold %}score-green{% elif score >= test_result.test.warning_threshold %}score-yellow{% else %}score-red{% endif %}">{{ score }}%</span>{% endwith %}
+                {% endif %}
+                · {{ test_result.passed|yesno:"Пройден,Не пройден" }}
+            {% endif %}
+        </div>
+        {% if test_feedback %}
+            <div class="small" style="margin-top:8px;">
+                Комментарий менеджера:
+                {{ test_feedback.comment|default:"—" }}
+            </div>
+            <div class="small">Оценка: {{ test_feedback.rating|default:"—" }}</div>
+        {% endif %}
+    </div>
+{% endif %}
+
+<div class="card">
+    <h2>Модули</h2>
+    {% if lessons %}
+        <table class="data-table">
+            <thead>
+                <tr style="text-align:left;">
+                    <th>Урок</th>
+                    <th>Описание</th>
+                    <th>Тест</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lesson in lessons %}
+                    <tr>
+                        <td>{{ lesson.title }}</td>
+                        <td>{{ lesson.description|default:"—" }}</td>
+                        <td>
+                            {% if lesson.has_test %}
+                                <span class="meta-pill">Есть</span>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a class="btn secondary" href="{% url 'employee_lesson_detail' lesson.id %}">Открыть</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="small">Уроков пока нет.</div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>Доступные тесты</h2>
+    {% if tests_available %}
+        <table class="data-table">
+            <thead>
+                <tr style="text-align:left;">
+                    <th>Тест</th>
+                    <th>Модуль</th>
+                    <th>Проходной балл (%)</th>
+                    <th>Срок</th>
+                    <th>Статус</th>
+                    <th>Попытки</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in tests_available %}
+                    <tr>
+                        <td>{{ item.test.title }}</td>
+                        <td>
+                            {% if item.lesson %}
+                                <a class="module-link" href="{% url 'employee_lesson_detail' item.lesson.id %}">{{ item.lesson.title }}</a>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td>{{ item.test.passing_score }}%</td>
+                        <td>{{ item.test.due_date|date:"d.m.Y"|default:"—" }}</td>
+                        <td>
+                            Доступен
+                        </td>
+                        <td>
+                            Попытки: {{ item.attempts_used }}/{{ item.attempts_total }}
+                        </td>
+                        <td>
+                            <a class="btn secondary" href="{% url 'employee_test_take' item.test.id %}">Пройти</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="small">Нет доступных тестов.</div>
+    {% endif %}
+</div>
+
+{% if tests_retake %}
+<div class="card">
+    <h2>На пересдаче</h2>
+    <table class="data-table">
+        <thead>
+            <tr style="text-align:left;">
+                <th>Тест</th>
+                <th>Модуль</th>
+                <th>Проходной балл (%)</th>
+                <th>Срок</th>
+                <th>Статус</th>
+                <th>Попытки</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in tests_retake %}
+                <tr>
+                    <td>{{ item.test.title }}</td>
+                    <td>
+                        {% if item.lesson %}
+                            <a class="module-link" href="{% url 'employee_lesson_detail' item.lesson.id %}">{{ item.lesson.title }}</a>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>{{ item.test.passing_score }}%</td>
+                    <td>{{ item.test.due_date|date:"d.m.Y"|default:"—" }}</td>
+                    <td>На пересдаче</td>
+                    <td>
+                        Попытки: {{ item.attempts_used }}/{{ item.attempts_total }}
+                    </td>
+                    <td>
+                        {% if item.needs_retake_decision %}
+                            <form method="post" action="{% url 'employee_test_accept' item.test.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn secondary">Принять</button>
+                            </form>
+                            <form method="post" action="{% url 'employee_test_decline' item.test.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn secondary">Отказаться</button>
+                            </form>
+                        {% else %}
+                            {% if item.can_attempt %}
+                                <a class="btn secondary" href="{% url 'employee_test_take' item.test.id %}">{{ item.button_label }}</a>
+                            {% else %}
+                                <span class="small">Лимит исчерпан</span>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<div class="card">
+    <h2>Пройденные тесты</h2>
+    {% if tests_completed %}
+        <table class="data-table">
+            <thead>
+                <tr style="text-align:left;">
+                    <th>Тест</th>
+                    <th>Модуль</th>
+                    <th>Проходной балл (%)</th>
+                    <th>Срок</th>
+                    <th>Статус</th>
+                    <th>Попытки</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in tests_completed %}
+                    <tr>
+                        <td>{{ item.test.title }}</td>
+                        <td>
+                            {% if item.lesson %}
+                                <a class="module-link" href="{% url 'employee_lesson_detail' item.lesson.id %}">{{ item.lesson.title }}</a>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td>{{ item.test.passing_score }}%</td>
+                        <td>{{ item.test.due_date|date:"d.m.Y"|default:"—" }}</td>
+                        <td>
+                            {% if item.result.status == 'UNDER_REVIEW' %}
+                                Ожидает проверки
+                            {% elif item.result.status == 'PASSED' %}
+                                Проверено{% if item.result.score != None %} · {% with score=item.result.score %}<span class="{% if score > item.test.success_threshold %}score-green{% elif score >= item.test.warning_threshold %}score-yellow{% else %}score-red{% endif %}">{{ score }}%</span>{% endwith %}{% endif %} · Пройден
+                            {% elif item.result.status == 'FAILED' %}
+                                Проверено{% if item.result.score != None %} · {% with score=item.result.score %}<span class="{% if score > item.test.success_threshold %}score-green{% elif score >= item.test.warning_threshold %}score-yellow{% else %}score-red{% endif %}">{{ score }}%</span>{% endwith %}{% endif %} · Провален
+                            {% elif item.result.status == 'DECLINED' %}
+                                Отказался от пересдачи
+                            {% else %}
+                                {% if item.result.score != None %}
+                                    {% with score=item.result.score %}<span class="{% if score > item.test.success_threshold %}score-green{% elif score >= item.test.warning_threshold %}score-yellow{% else %}score-red{% endif %}">{{ score }}%</span>{% endwith %}
+                                {% endif %}
+                                · {{ item.result.passed|yesno:"Пройден,Не пройден" }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            Попытки: {{ item.attempts_used }}/{{ item.attempts_total }}
+                        </td>
+                        <td>
+                            <a class="btn secondary" href="{% url 'employee_test_result' item.result.id %}">Результат</a>
+                            {% if item.can_attempt %}
+                                <a class="btn secondary" href="{% url 'employee_test_take' item.test.id %}">{{ item.button_label }}</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="small">Пройденных тестов пока нет.</div>
+{% endif %}
+</div>
+
+{% if test_result and result_questions %}
+    <div class="card">
+        <h2>Проверка</h2>
+        {% for item in result_questions %}
+            <div style="margin-bottom:16px;">
+                <div style="font-weight:600; margin-bottom:6px;">{{ forloop.counter }}. {{ item.question.text }}</div>
+                {% if item.type == 'SINGLE' or item.type == 'MULTI' %}
+                    {% for answer in item.answers %}
+                        <div class="small answer-line{% if show_review %}{% if answer.id in item.correct_ids %} answer-correct{% elif answer.id in item.selected_ids %} answer-wrong{% endif %}{% endif %}" style="margin-bottom:4px;">
+                            {% if answer.id in item.selected_ids %}
+                                ✓
+                            {% endif %}
+                            {{ answer.text }}
+                            {% if show_review and answer.id in item.correct_ids %}
+                                <span class="answer-tag">правильный</span>
+                            {% elif show_review and answer.id in item.selected_ids %}
+                                <span class="answer-tag">неверный</span>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% elif item.type == 'MATCHING' %}
+                    {% for row in item.matching_rows %}
+                        <div class="small" style="margin-bottom:4px;">
+                            {{ row.left_text }} —
+                            <span{% if show_review %}{% if row.selected_right_id == row.right_id %} class="answer-correct"{% elif row.selected_right_id %} class="answer-wrong"{% endif %}{% endif %}>
+                                {{ row.selected_right_text|default:"—" }}
+                            </span>
+                            {% if show_review and row.selected_right_id != row.right_id %}
+                                <span class="answer-correct"> (Правильно: {{ row.right_text }})</span>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% elif item.type == 'ORDERING' %}
+                    {% if item.ordering_rows %}
+                        {% for row in item.ordering_rows %}
+                            <div class="small" style="margin-bottom:4px;">
+                                {{ row.text }} —
+                                <span{% if show_review %}{% if row.user_position == row.position %} class="answer-correct"{% elif row.user_position %} class="answer-wrong"{% endif %}{% endif %}>
+                                    ваше место: {{ row.user_position|default:"—" }}
+                                </span>
+                                {% if show_review and row.user_position != row.position %}
+                                    <span class="answer-correct"> (Правильно: {{ row.position }})</span>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="small">—</div>
+                    {% endif %}
+                {% elif item.type == 'SHORT' or item.type == 'LONG' %}
+                    <div class="small">{{ item.answer_text|default:"—" }}</div>
+                    {% if item.answer_file %}
+                        <div class="small">
+                            <a href="{{ item.answer_file.url }}" target="_blank" rel="noopener">Файл ответа</a>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div class="card">
+    <h2>Задания</h2>
+    {% if assignments %}
+        <table class="data-table">
+            <thead>
+                <tr style="text-align:left;">
+                    <th>Задание</th>
+                    <th>Срок</th>
+                    <th>Статус</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for assignment in assignments %}
+                    <tr>
+                        <td>{{ assignment.task.title }}</td>
+                        <td>{{ assignment.due_date|date:"d.m.Y"|default:"—" }}</td>
+                        <td>{{ assignment.get_status_display }}</td>
+                        <td>
+                            <a class="btn secondary" href="{% url 'employee_task_detail' assignment.task.id %}">Открыть</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="small">Назначенных заданий пока нет.</div>
+    {% endif %}
+</div>
+{% endblock %}

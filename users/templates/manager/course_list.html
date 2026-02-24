@@ -1,0 +1,40 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Мои курсы{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Мои курсы</h1>
+    <div class="actions">
+        <a class="btn" href="{% url 'manager_course_create' %}">Создать курс</a>
+        <a class="btn secondary" href="{% url 'manager_dashboard' %}">Назад</a>
+    </div>
+</div>
+
+<div class="card">
+    {% if courses %}
+        <div class="grid">
+            {% for course in courses %}
+                <div style="border:1px solid rgba(255,255,255,0.15); border-radius:14px; padding:16px;">
+                    <h2 style="margin-bottom:8px;">{{ course.title }}</h2>
+                    <div class="small">Специальность: {{ course.specialty|default:"—" }}</div>
+                    <div class="small">Участники: {{ course.enrollments_count }}</div>
+                    <div class="small">Тесты: {{ course.tests_count }} · Задания: {{ course.tasks_count }}</div>
+                    <div class="actions" style="margin-top:12px;">
+                        <a class="btn" href="{% url 'manager_course_detail' course.id %}">Открыть курс</a>
+                        <a class="btn secondary" href="{% url 'manager_course_edit' course.id %}">Изменить</a>
+                        <a class="btn secondary" href="{% url 'manager_course_assign' course.id %}">Назначить</a>
+                        <form method="post" action="{% url 'manager_course_delete' course.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.path }}">
+                            <button type="submit">Удалить</button>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="small">Пока нет курсов. Создайте первый.</div>
+    {% endif %}
+</div>
+{% endblock %}
