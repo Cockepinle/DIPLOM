@@ -20,9 +20,71 @@
                 {{ form.priority }}
             </div>
         </div>
+        <div style="margin-top:14px; display:flex; gap:12px; align-items:center;">
+            <label for="{{ form.assign_all.id_for_label }}">{{ form.assign_all }}</label>
+            <span>Выбрать всех</span>
+        </div>
+        {{ form.assign_all.errors }}
         <div style="margin-top:14px;">
             <label>Сотрудники</label>
-            {{ form.users }}
+            <div class="user-picker" data-user-picker>
+                <div class="user-picker__filters">
+                    <input type="search" class="user-picker__search" placeholder="Поиск по ФИО / почте / должности…" autocomplete="off">
+                    <select class="user-picker__role">
+                        <option value="">Все роли</option>
+                    </select>
+                </div>
+                <div class="user-picker__list">
+                    <div class="user-picker__items" data-user-picker-items>
+                        {% with selected_ids=form.users.value %}
+                        {% for user in users %}
+                            {% with position_name=user.position.name|default_if_none:'' %}
+                                <div
+                                    class="user-picker__item {% if user.id in assigned_user_ids %}is-assigned{% endif %}"
+                                    data-user-item
+                                    data-role="{{ position_name }}"
+                                    data-search="{{ user.last_name }} {{ user.first_name }} {{ user.email }} {{ position_name }}"
+                                >
+                                    <div class="user-picker__main">
+                                        {% if user.id in assigned_user_ids %}
+                                            <div class="user-picker__label user-picker__label--assigned">
+                                                <span class="user-picker__badge">Назначено</span>
+                                                <span class="user-picker__text">
+                                                    {{ user.last_name }} {{ user.first_name }} ({{ user.email }})
+                                                    {% if position_name %} · {{ position_name }}{% endif %}
+                                                </span>
+                                            </div>
+                                        {% else %}
+                                            <label class="user-picker__label">
+                                                <input type="checkbox" name="users" value="{{ user.id }}" {% if selected_ids and user.id|stringformat:"s" in selected_ids %}checked{% endif %}>
+                                                <span class="user-picker__text">
+                                                    {{ user.last_name }} {{ user.first_name }} ({{ user.email }})
+                                                    {% if position_name %} · {{ position_name }}{% endif %}
+                                                </span>
+                                            </label>
+                                        {% endif %}
+                                    </div>
+                                    <div class="user-picker__actions">
+                                        {% if user.id in assigned_user_ids %}
+                                            <button
+                                                type="submit"
+                                                class="btn danger"
+                                                name="revoke_user"
+                                                value="{{ user.id }}"
+                                                formnovalidate
+                                            >
+                                                Отозвать
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endwith %}
+                        {% endfor %}
+                        {% endwith %}
+                    </div>
+                </div>
+                <div class="user-picker__hint" data-user-picker-count></div>
+            </div>
             {{ form.users.errors }}
             {% if not users_count %}
                 <div class="small" style="margin-top:8px;">Нет сотрудников для назначения.</div>
@@ -34,4 +96,46 @@
         </div>
     </form>
 </div>
+
+<script>
+    (function () {
+        const picker = document.querySelector('[data-user-picker]');
+        if (!picker) return;
+
+        const search = picker.querySelector('.user-picker__search');
+        const roleSelect = picker.querySelector('.user-picker__role');
+        const hint = picker.querySelector('[data-user-picker-count]');
+        const items = Array.from(picker.querySelectorAll('[data-user-item]')).map((row) => {
+            const text = (row.getAttribute('data-search') || row.textContent || '').replace(/\s+/g, ' ').trim();
+            const role = (row.getAttribute('data-role') || '').trim();
+            return { row, text, role };
+        });
+
+        const roles = Array.from(new Set(items.map((x) => x.role).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'ru'));
+        roles.forEach((r) => {
+            const opt = document.createElement('option');
+            opt.value = r;
+            opt.textContent = r;
+            roleSelect.appendChild(opt);
+        });
+
+        function apply() {
+            const q = (search.value || '').trim().toLowerCase();
+            const role = roleSelect.value;
+            let shown = 0;
+            items.forEach((it) => {
+                const okText = !q || it.text.toLowerCase().includes(q);
+                const okRole = !role || it.role === role;
+                const ok = okText && okRole;
+                it.row.style.display = ok ? '' : 'none';
+                if (ok) shown += 1;
+            });
+            if (hint) hint.textContent = `Показано: ${shown}`;
+        }
+
+        search.addEventListener('input', apply);
+        roleSelect.addEventListener('change', apply);
+        apply();
+    })();
+</script>
 {% endblock %}

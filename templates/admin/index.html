@@ -1,0 +1,98 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls log %}
+
+{% block bodyclass %}{{ block.super }} dashboard{% endblock %}
+
+{% block content %}
+  <div class="ac-admin">
+    <div class="ac-admin__top">
+      <div>
+        <h1 class="ac-admin__title">Панель управления</h1>
+        <p class="ac-admin__subtitle">Быстрые переходы и список разделов админки.</p>
+      </div>
+    </div>
+
+    <div class="ac-quick">
+      {% for app in app_list %}
+        {% for model in app.models %}
+          {% if model.object_name == "User" %}
+            <a class="ac-quick__card ac-quick__card--accent" href="{{ model.admin_url }}">
+              <div class="ac-quick__label">Пользователи</div>
+              <div class="ac-quick__hint">Список и управление</div>
+            </a>
+          {% endif %}
+          {% if model.object_name == "Course" %}
+            <a class="ac-quick__card" href="{{ model.admin_url }}">
+              <div class="ac-quick__label">Курсы</div>
+              <div class="ac-quick__hint">Материалы и задания</div>
+            </a>
+          {% endif %}
+          {% if model.object_name == "Feedback" %}
+            <a class="ac-quick__card" href="{{ model.admin_url }}">
+              <div class="ac-quick__label">Фидбек</div>
+              <div class="ac-quick__hint">Отзывы и проверки</div>
+            </a>
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+    </div>
+
+    <div class="ac-grid">
+      {% if app_list %}
+        {% for app in app_list %}
+          <section class="ac-card">
+            <div class="ac-card__head">
+              <a class="ac-card__title" href="{{ app.app_url }}">{{ app.name }}</a>
+              <span class="ac-card__meta">{{ app.models|length }}</span>
+            </div>
+            <ul class="ac-card__list">
+              {% for model in app.models %}
+                <li class="ac-card__item">
+                  <a class="ac-card__link" href="{{ model.admin_url }}">{{ model.name }}</a>
+                  <span class="ac-card__actions">
+                    {% if model.add_url %}
+                      <a class="ac-card__add" href="{{ model.add_url }}" aria-label="{% trans 'Add' %} {{ model.name }}">+</a>
+                    {% endif %}
+                  </span>
+                </li>
+              {% endfor %}
+            </ul>
+          </section>
+        {% endfor %}
+
+        <section class="ac-card ac-card--wide">
+          <div class="ac-card__head">
+            <div class="ac-card__title">{% trans "Recent actions" %}</div>
+            <span class="ac-card__meta">{% trans "last 10" %}</span>
+          </div>
+          {% get_admin_log 10 as admin_log for_user user %}
+          {% if not admin_log %}
+            <div class="ac-empty">{% trans "None available" %}</div>
+          {% else %}
+            <ul class="ac-actions">
+              {% for entry in admin_log %}
+                <li class="ac-actions__item">
+                  {% if entry.is_deletion or not entry.get_admin_url %}
+                    <span class="ac-actions__obj">{{ entry.object_repr }}</span>
+                  {% else %}
+                    <a class="ac-actions__obj" href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>
+                  {% endif %}
+                  <div class="ac-actions__meta">
+                    <span class="ac-actions__type">{{ entry.content_type.name|capfirst }}</span>
+                    <span class="ac-actions__sep">•</span>
+                    <span class="ac-actions__time">{{ entry.action_time }}</span>
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </section>
+      {% else %}
+        <div class="ac-empty">
+          {% trans "You don’t have permission to view or edit anything." %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+

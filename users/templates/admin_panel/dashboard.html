@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Админ-панель</title>
-    <link rel="stylesheet" href="{% static 'admin_panel/admin_panel.css' %}">
+    <link rel="stylesheet" href="{% static 'admin_panel/admin_panel.css' %}?v=9">
     <script>
         (function () {
-            const stored = localStorage.getItem('theme') || 'dark';
+            const stored = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', stored);
         })();
     </script>
@@ -17,9 +17,16 @@
         <aside class="sidebar">
             <div class="brand">Админ‑панель</div>
             <div class="subtitle">Управление всеми сущностями через API</div>
+            <input class="nav-search" id="navSearch" placeholder="Поиск раздела…" autocomplete="off">
             <div class="nav" id="resourceList"></div>
             <div class="sidebar-footer">
-                Только администратор.
+                <div class="small">Только администратор.</div>
+                <a class="sidebar-link" href="{% url 'home' %}" title="На главную страницу">На главную</a>
+                <a class="sidebar-link" href="{% url 'chat_inbox' %}" title="Чаты сотрудников">Чаты</a>
+                <form method="post" action="{% url 'logout' %}" id="logoutForm">
+                    {% csrf_token %}
+                    <button class="sidebar-link sidebar-link--danger" type="submit" title="Выйти">Выйти</button>
+                </form>
             </div>
         </aside>
         <main class="main">
@@ -29,6 +36,7 @@
                     <div class="meta" id="resourceMeta"></div>
                 </div>
                 <div class="toolbar-actions">
+                    <button class="secondary toolbar-back" id="dashboardBtn" type="button" style="display:none;">Панель</button>
                     <button class="secondary" id="backupBtn" style="display:none;">Сделать бэкап</button>
                     <button class="secondary" id="restoreBtn" style="display:none;">Восстановить</button>
                     <input type="file" id="restoreFile" accept=".json" style="display:none;">
@@ -40,6 +48,8 @@
             </div>
 
             <div class="notice" id="notice" style="display:none;"></div>
+
+            <section class="dashboard-view" id="dashboardView" style="display:none;"></section>
 
             <div class="filters">
                 <input id="searchInput" placeholder="Поиск">
@@ -54,7 +64,7 @@
             <div class="filter-rows" id="filterRows"></div>
             <button class="secondary" id="addFilterRow">Добавить фильтр</button>
 
-            <div class="table-card" style="margin-top:16px;">
+            <div class="table-card" id="tableCard" style="margin-top:16px;">
                 <div class="table-wrapper">
                     <table id="dataTable"></table>
                 </div>
@@ -95,7 +105,7 @@
                 btn.innerHTML = `<span class="dot"></span><span class="label">${theme === 'light' ? 'Светлая' : 'Темная'}</span>`;
                 btn.title = 'Сменить тему';
             }
-            const current = localStorage.getItem('theme') || 'dark';
+            const current = localStorage.getItem('theme') || 'light';
             applyTheme(current);
             btn.addEventListener('click', () => {
                 const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
@@ -103,6 +113,6 @@
             });
         })();
     </script>
-    <script src="{% static 'admin_panel/admin_panel.js' %}"></script>
+    <script src="{% static 'admin_panel/admin_panel.js' %}?v=9"></script>
 </body>
 </html>

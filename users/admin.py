@@ -16,6 +16,30 @@ class UserAdmin(admin.ModelAdmin):
     )
     list_filter = ('role', 'department', 'position', 'specialty', 'is_active', 'is_staff')
     search_fields = ('last_name', 'email', 'position__name')
+    readonly_fields = ('email', 'password')
+    fields = (
+        'email',
+        'password',
+        'first_name',
+        'last_name',
+        'role',
+        'department',
+        'position',
+        'specialty',
+        'avatar',
+        'registration_status',
+        'registration_requested_at',
+        'registration_reviewed_at',
+        'registration_reviewed_by',
+        'registration_review_comment',
+        'is_active',
+        'is_staff',
+        'is_superuser',
+        'groups',
+        'user_permissions',
+        'last_login',
+        'date_joined',
+    )
 
 
 @admin.register(Specialty)

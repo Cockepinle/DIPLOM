@@ -13,36 +13,40 @@
 
 <div class="card">
     {% if tasks %}
-        <table style="width:100%; border-collapse:collapse;">
+        <table class="data-table">
             <thead>
                 <tr style="text-align:left;">
-                    <th style="padding:8px 6px;">Задание</th>
-                    <th style="padding:8px 6px;">Курс</th>
-                    <th style="padding:8px 6px;">Сотрудники</th>
-                    <th style="padding:8px 6px;">Назначений</th>
-                    <th style="padding:8px 6px;">Статус</th>
-                    <th style="padding:8px 6px;"></th>
+                    <th class="wrap" style="padding:8px 6px;">Задание</th>
+                    <th class="wrap" style="padding:8px 6px;">Курс</th>
+                    <th class="wrap" style="padding:8px 6px;">Сотрудники</th>
+                    <th class="nowrap" style="padding:8px 6px;">Назначений</th>
+                    <th class="nowrap" style="padding:8px 6px;">Статус</th>
+                    <th class="actions-col" style="padding:8px 6px;"></th>
                 </tr>
             </thead>
             <tbody>
                 {% for task in tasks %}
-                    <tr style="border-top:1px solid rgba(255,255,255,0.12);">
-                        <td style="padding:8px 6px;">{{ task.title }}</td>
-                        <td style="padding:8px 6px;">
+                    <tr>
+                        <td class="wrap" style="padding:8px 6px;">{{ task.title }}</td>
+                        <td class="wrap" style="padding:8px 6px;">
                             {% if task.course %}{{ task.course.title }}{% else %}—{% endif %}
                         </td>
-                        <td style="padding:8px 6px;">
+                        <td class="wrap" style="padding:8px 6px;">
                             {% if task.assignments.all %}
-                                {% for assignment in task.assignments.all %}
-                                    {{ assignment.user.last_name }} {{ assignment.user.first_name }}{% if assignment.user.email %} ({{ assignment.user.email }}){% endif %}{% if not forloop.last %}, {% endif %}
-                                {% endfor %}
+                                <div class="assignment-list">
+                                    {% for assignment in task.assignments.all %}
+                                        <div class="assignment-list-item">
+                                            {{ assignment.user.last_name }} {{ assignment.user.first_name }}{% if assignment.user.email %} <span>({{ assignment.user.email }})</span>{% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
                             {% else %}
                                 <span class="small">Пока не назначено</span>
                             {% endif %}
                         </td>
-                        <td style="padding:8px 6px;">{{ task.assignments_count }}</td>
-                        <td style="padding:8px 6px;">{{ task.is_published|yesno:"Опубликовано,Черновик" }}</td>
-                        <td style="padding:8px 6px;">
+                        <td class="nowrap" style="padding:8px 6px;">{{ task.assignments_count }}</td>
+                        <td class="nowrap" style="padding:8px 6px;">{{ task.is_published|yesno:"Опубликовано,Черновик" }}</td>
+                        <td class="actions-col" style="padding:8px 6px;">
                             <div class="actions" style="gap:6px; flex-wrap:wrap;">
                                 {% if task.submissions_count == 0 %}
                                     <a class="btn secondary" href="{% url 'manager_task_edit' task.id %}">Изменить</a>

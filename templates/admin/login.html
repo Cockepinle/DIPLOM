@@ -6,10 +6,10 @@
   <style>
     body.login {
       background:
-        radial-gradient(1200px 600px at 20% -10%, rgba(93, 116, 255, 0.3), transparent 60%),
-        radial-gradient(1000px 500px at 80% 10%, rgba(120, 150, 255, 0.22), transparent 60%),
-        radial-gradient(900px 500px at 50% 100%, rgba(90, 120, 255, 0.2), transparent 60%),
-        linear-gradient(160deg, #0b0f2d, #0f1c3d 55%, #131c52);
+        radial-gradient(1200px 600px at 20% -10%, rgba(157, 255, 43, 0.10), transparent 60%),
+        radial-gradient(1000px 500px at 80% 10%, rgba(255, 255, 255, 0.06), transparent 60%),
+        radial-gradient(900px 500px at 50% 100%, rgba(255, 255, 255, 0.05), transparent 60%),
+        linear-gradient(160deg, #07090d, #0b1016 55%, #0a0f14);
       min-height: 100vh;
     }
     .login #container {
@@ -21,21 +21,22 @@
       margin: 6vh auto 0;
       padding: 36px;
       border-radius: 20px;
-      background: rgba(20, 30, 70, 0.45);
+      background: var(--glass);
       backdrop-filter: blur(16px);
       box-shadow:
         0 16px 40px rgba(6, 10, 28, 0.5),
-        0 0 30px rgba(80, 110, 255, 0.25);
-      color: #fff;
+        0 0 30px rgba(157, 255, 43, 0.12);
+      color: var(--text);
+      border: 1px solid var(--stroke);
     }
     .login #content h1 {
-      color: #fff;
+      color: var(--text);
       font-weight: 600;
       text-align: center;
       margin-bottom: 18px;
     }
     .login .form-row label {
-      color: #cbd3ff;
+      color: var(--text-soft);
       font-size: 12px;
     }
     .login .form-row input {
@@ -43,8 +44,8 @@
       padding: 12px;
       border-radius: 10px;
       border: none;
-      background: rgba(26, 38, 92, 0.6);
-      color: #fff;
+      background: var(--glass-strong);
+      color: var(--text);
       outline: none;
     }
     .login .submit-row input[type="submit"] {
@@ -52,12 +53,12 @@
       padding: 12px;
       border-radius: 12px;
       border: none;
-      background: linear-gradient(135deg, #647bff, #8aa0ff);
-      color: #fff;
+      background: var(--accent-grad);
+      color: #15171c;
       font-weight: 600;
       cursor: pointer;
       margin-top: 8px;
-      box-shadow: 0 10px 22px rgba(88, 120, 255, 0.35);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45), 0 0 18px rgba(157, 255, 43, 0.12);
     }
     .login .errornote {
       color: #ffdede;

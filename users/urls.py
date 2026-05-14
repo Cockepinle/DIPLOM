@@ -5,6 +5,7 @@ from .views import (
     redirect_after_login,
     profile_view,
     admin_panel_view,
+    registration_requests_view,
     manager_dashboard,
     manager_course_list,
     manager_course_detail,
@@ -42,6 +43,7 @@ from .views import (
     analyst_dashboard,
     analyst_export,
     employee_dashboard,
+    employee_progress,
     employee_course_detail,
     employee_lesson_detail,
     employee_test_decline,
@@ -49,6 +51,7 @@ from .views import (
     employee_test_take,
     employee_test_result,
     employee_task_detail,
+    manager_student_progress,
 )
 
 urlpatterns = [
@@ -56,6 +59,7 @@ urlpatterns = [
     path('redirect/', redirect_after_login, name='redirect_after_login'),
     path('profile/', profile_view, name='profile'),
     path('admin-panel/', admin_panel_view, name='admin_panel'),
+    path('admin-panel/registration-requests/', registration_requests_view, name='registration_requests'),
     path('manager/', manager_dashboard, name='manager_dashboard'),
     path('manager/courses/', manager_course_list, name='manager_course_list'),
     path('manager/courses/<int:course_id>/', manager_course_detail, name='manager_course_detail'),
@@ -94,6 +98,7 @@ urlpatterns = [
     path('analytics/', analyst_dashboard, name='analyst_dashboard'),
     path('analytics/export/<str:export_format>/', analyst_export, name='analyst_export'),
     path('employee/', employee_dashboard, name='employee_dashboard'),
+    path('employee/progress/', employee_progress, name='employee_progress'),
     path('employee/courses/<int:course_id>/', employee_course_detail, name='employee_course_detail'),
     path('employee/lessons/<int:lesson_id>/', employee_lesson_detail, name='employee_lesson_detail'),
     path('employee/tests/<int:test_id>/decline/', employee_test_decline, name='employee_test_decline'),
@@ -101,6 +106,7 @@ urlpatterns = [
     path('employee/tests/<int:test_id>/take/', employee_test_take, name='employee_test_take'),
     path('employee/tests/results/<int:result_id>/', employee_test_result, name='employee_test_result'),
     path('employee/tasks/<int:task_id>/', employee_task_detail, name='employee_task_detail'),
+    path('manager/students/<int:student_id>/progress/', manager_student_progress, name='manager_student_progress'),
     path('register/', register_view, name='register'),
 ]
 

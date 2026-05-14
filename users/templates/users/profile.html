@@ -20,7 +20,7 @@
             border-radius: 22px;
             background: var(--card-bg);
             backdrop-filter: blur(16px);
-            box-shadow: 0 10px 36px rgba(0, 0, 0, 0.2);
+            box-shadow: var(--shadow-lg);
             padding: 28px;
             border: 1px solid var(--card-border);
         }
@@ -37,9 +37,57 @@
             height: 140px;
             border-radius: 50%;
             padding: 4px;
-            background: linear-gradient(135deg, #6a11cb, #2575fc);
-            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+            background: var(--btn-bg);
+            box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
             margin-bottom: 16px;
+        }
+        .avatar-zoom {
+            border: 0;
+            padding: 0;
+            background: transparent;
+            cursor: pointer;
+            color: inherit;
+        }
+        .avatar-zoom .avatar-wrap {
+            position: relative;
+        }
+        .avatar-zoom__icon {
+            position: absolute;
+            right: 8px;
+            bottom: 8px;
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--card-border);
+            background: rgba(0, 0, 0, 0.28);
+            color: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+            opacity: 0;
+            transform: translateY(2px);
+            transition: opacity 0.15s ease, transform 0.15s ease;
+            pointer-events: none;
+        }
+        :root[data-theme="light"] .avatar-zoom__icon {
+            background: rgba(255, 255, 255, 0.62);
+            color: #111;
+        }
+        .avatar-zoom:hover .avatar-zoom__icon,
+        .avatar-zoom:focus-visible .avatar-zoom__icon {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .avatar-zoom:focus-visible {
+            outline: 2px solid var(--accent-soft);
+            outline-offset: 8px;
+            border-radius: 18px;
+        }
+        .avatar-zoom__icon svg {
+            width: 18px;
+            height: 18px;
+            opacity: 0.95;
         }
 
         .avatar {
@@ -125,13 +173,8 @@
         }
         select option:checked,
         select option:hover {
-            background: #000;
-            color: #fff;
-        }
-
-        input[type="file"] {
-            padding: 8px;
-            cursor: pointer;
+            background: var(--select-option-bg);
+            color: var(--select-option-text);
         }
 
         .actions {
@@ -145,37 +188,50 @@
             margin: 0;
         }
 
-        button, .link-btn {
+        .profile-shell .actions button,
+        .profile-shell .actions .link-btn {
             flex: 1;
             padding: 12px;
             border-radius: 12px;
-            border: none;
-            background: linear-gradient(135deg, #6a11cb, #2575fc);
-            color: white;
+            border: 1px solid var(--card-border);
+            background: var(--btn-bg);
+            color: var(--btn-text);
             font-weight: 600;
             cursor: pointer;
             text-align: center;
             text-decoration: none;
         }
 
-        .link-btn {
-            background: rgba(255, 255, 255, 0.18);
+        .profile-shell .actions .link-btn {
+            background: var(--btn-secondary-bg);
+            color: var(--btn-secondary-text);
+        }
+        .profile-shell .actions button:hover,
+        .profile-shell .actions .link-btn:hover {
+            border-color: var(--nav-active-bg);
+            box-shadow: 0 0 0 3px var(--accent-soft);
         }
 
         .success {
             margin-top: 12px;
             font-size: 13px;
-            color: #c6ffdd;
-            background: rgba(46, 204, 113, 0.2);
+            color: #1f5130;
+            background: rgba(46, 204, 113, 0.18);
+            border: 1px solid rgba(46, 204, 113, 0.35);
             padding: 10px 12px;
             border-radius: 10px;
+        }
+        :root[data-theme="dark"] .success {
+            color: #c6ffdd;
+            background: rgba(46, 204, 113, 0.2);
+            border-color: rgba(97, 255, 166, 0.35);
         }
 
         .errors {
             margin-bottom: 12px;
             font-size: 13px;
-            color: #ffdede;
-            background: rgba(255, 0, 0, 0.2);
+            color: var(--danger-text);
+            background: var(--danger-bg);
             padding: 10px 12px;
             border-radius: 10px;
         }
@@ -185,21 +241,78 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        .save-hint-toast {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            z-index: 9999;
+            max-width: min(420px, calc(100vw - 36px));
+            padding: 12px 12px;
+            border-radius: 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            box-shadow: var(--shadow-lg);
+            backdrop-filter: blur(16px);
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: center;
+            opacity: 0;
+            transform: translateY(8px);
+            pointer-events: none;
+            transition: opacity 0.16s ease, transform 0.16s ease;
+        }
+        .save-hint-toast.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .save-hint-toast__title {
+            font-weight: 700;
+            margin: 0;
+            font-size: 13px;
+        }
+        .save-hint-toast__text {
+            margin-top: 2px;
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.35;
+        }
+        .save-hint-toast__close {
+            border: 1px solid var(--input-border);
+            background: var(--btn-secondary-bg);
+            color: var(--btn-secondary-text);
+            border-radius: 12px;
+            padding: 8px 10px;
+            cursor: pointer;
+            font-weight: 700;
+        }
     </style>
 {% endblock %}
 
 {% block content %}
 <div class="profile-shell">
     <div class="card profile-header">
-        <div class="avatar-wrap">
-            {% if user.avatar %}
-                <img class="avatar" src="{{ user.avatar.url }}" alt="avatar">
-            {% else %}
+        {% if user.avatar %}
+            <button type="button" class="avatar-zoom" data-open-image="{{ user.avatar.url }}" aria-label="Посмотреть фото профиля">
+                <div class="avatar-wrap">
+                    <img class="avatar" src="{{ user.avatar.url }}" alt="avatar">
+                    <span class="avatar-zoom__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" stroke-width="2"/>
+                            <path d="M16.5 16.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </span>
+                </div>
+            </button>
+        {% else %}
+            <div class="avatar-wrap">
                 <div class="avatar-placeholder">
                     {{ user.first_name|default:"?"|slice:":1" }}{{ user.last_name|default:""|slice:":1" }}
                 </div>
-            {% endif %}
-        </div>
+            </div>
+        {% endif %}
 
         <h2>{{ user.last_name }} {{ user.first_name }}</h2>
         <div class="role-badge">{{ user.get_role_display }}</div>
@@ -221,6 +334,16 @@
             {% csrf_token %}
             <label for="{{ form.avatar.id_for_label }}">Фото профиля</label>
             {{ form.avatar }}
+            <span style="display:none;">{{ form.remove_avatar }}</span>
+
+            {% if user.avatar %}
+                <div class="actions" style="margin-top: 10px;">
+                    <button type="button" class="link-btn" id="removeAvatarBtn">Удалить фото</button>
+                </div>
+                <div class="small" id="removeAvatarNote" style="display:none; margin-top:8px; color: var(--muted);">
+                    Фото будет удалено после нажатия «Сохранить».
+                </div>
+            {% endif %}
 
             <div class="grid" style="margin-top: 14px;">
                 <div>
@@ -258,4 +381,72 @@
         </div>
     </div>
 </div>
+
+<div class="save-hint-toast" id="saveHintToast" role="status" aria-live="polite" aria-atomic="true">
+    <div>
+        <div class="save-hint-toast__title">Изменения не сохранены</div>
+        <div class="save-hint-toast__text" id="saveHintToastText">Нажмите кнопку «Сохранить», чтобы применить изменения.</div>
+    </div>
+    <button type="button" class="save-hint-toast__close" id="saveHintToastClose">Ок</button>
+</div>
+
+<script>
+    (function () {
+        const form = document.querySelector('.profile-shell form[enctype]');
+        const toast = document.getElementById('saveHintToast');
+        const toastText = document.getElementById('saveHintToastText');
+        const toastClose = document.getElementById('saveHintToastClose');
+        const removeBtn = document.getElementById('removeAvatarBtn');
+        const removeField = form ? form.querySelector('input[name="remove_avatar"]') : null;
+        const removeNote = document.getElementById('removeAvatarNote');
+        if (!form || !toast || !toastText || !toastClose) return;
+
+        let hideTimer = null;
+
+        function showToast(text) {
+            toastText.textContent = text;
+            toast.classList.add('is-visible');
+            if (hideTimer) window.clearTimeout(hideTimer);
+            hideTimer = window.setTimeout(() => toast.classList.remove('is-visible'), 6000);
+        }
+
+        function onChanged(kind, fileInput) {
+            if (kind === 'file' && fileInput && fileInput.files && fileInput.files.length) {
+                const name = fileInput.files.length === 1 ? fileInput.files[0].name : `файлов: ${fileInput.files.length}`;
+                showToast(`Файл выбран (${name}). Нажмите «Сохранить», чтобы применить изменения.`);
+                return;
+            }
+            showToast('Нажмите кнопку «Сохранить», чтобы применить изменения.');
+        }
+
+        const controls = form.querySelectorAll('input, select, textarea');
+        controls.forEach((el) => {
+            if (!el || el.disabled) return;
+            if (el.type === 'hidden' || el.type === 'submit' || el.type === 'button') return;
+
+            if (el.type === 'file') {
+                el.addEventListener('change', () => onChanged('file', el));
+                return;
+            }
+
+            if (el.tagName === 'SELECT') {
+                el.addEventListener('change', () => onChanged('data'));
+                return;
+            }
+
+            el.addEventListener('input', () => onChanged('data'));
+        });
+
+        toastClose.addEventListener('click', () => toast.classList.remove('is-visible'));
+        form.addEventListener('submit', () => toast.classList.remove('is-visible'));
+
+        if (removeBtn && removeField) {
+            removeBtn.addEventListener('click', () => {
+                removeField.checked = true;
+                if (removeNote) removeNote.style.display = 'block';
+                showToast('Фото помечено на удаление. Нажмите «Сохранить», чтобы применить изменения.');
+            });
+        }
+    })();
+</script>
 {% endblock %}

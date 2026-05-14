@@ -1,7 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
-
 from api.auth import (
     CustomTokenObtainPairView,
     CustomTokenRefreshView,
@@ -38,7 +37,6 @@ from api.viewsets import (
 )
 
 router = DefaultRouter()
-
 router.register('users', UserViewSet, basename='users')
 router.register('specialties', SpecialtyViewSet, basename='specialties')
 router.register('positions', PositionViewSet, basename='positions')

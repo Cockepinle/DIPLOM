@@ -1,0 +1,76 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Заявки на регистрацию{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Заявки на регистрацию</h1>
+    <div class="small">
+        Ожидают: {{ counts.PENDING }} · Подтверждены: {{ counts.APPROVED }} · Отклонены: {{ counts.REJECTED }}
+    </div>
+    <div class="actions" style="margin-top:12px; flex-wrap:wrap;">
+        <a class="btn secondary" href="{% url 'registration_requests' %}?status=PENDING">Ожидают</a>
+        <a class="btn secondary" href="{% url 'registration_requests' %}?status=APPROVED">Подтверждены</a>
+        <a class="btn secondary" href="{% url 'registration_requests' %}?status=REJECTED">Отклонены</a>
+        <a class="btn secondary" href="{% url 'registration_requests' %}?status=ALL">Все</a>
+    </div>
+</div>
+
+<div class="card">
+    {% if requests %}
+        <table class="data-table">
+            <thead>
+                <tr style="text-align:left;">
+                    <th style="padding:8px 6px;">Сотрудник</th>
+                    <th style="padding:8px 6px;">Почта</th>
+                    <th style="padding:8px 6px;">Специальность</th>
+                    <th style="padding:8px 6px;">Должность</th>
+                    <th style="padding:8px 6px;">Статус</th>
+                    <th style="padding:8px 6px;">Дата заявки</th>
+                    <th style="padding:8px 6px; width: 320px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in requests %}
+                    <tr>
+                        <td style="padding:8px 6px;">{{ u.last_name }} {{ u.first_name }}</td>
+                        <td style="padding:8px 6px;">{{ u.email }}</td>
+                        <td style="padding:8px 6px;">{{ u.specialty|default:"—" }}</td>
+                        <td style="padding:8px 6px;">{{ u.position|default:"—" }}</td>
+                        <td style="padding:8px 6px;">
+                            {{ u.get_registration_status_display }}
+                            {% if not u.is_active %}<span class="small"> · неактивен</span>{% endif %}
+                        </td>
+                        <td style="padding:8px 6px;">{{ u.registration_requested_at|date:"d.m.Y H:i"|default:"—" }}</td>
+                        <td style="padding:8px 6px;">
+                            <form method="post" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                                {% csrf_token %}
+                                <input type="hidden" name="user_id" value="{{ u.id }}">
+                                <input type="hidden" name="action" value="approve">
+                                <input name="comment" placeholder="Комментарий (необязательно)" style="flex:1; min-width: 160px;">
+                                <button type="submit">Подтвердить</button>
+                            </form>
+                            <form method="post" style="display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap;">
+                                {% csrf_token %}
+                                <input type="hidden" name="user_id" value="{{ u.id }}">
+                                <input type="hidden" name="action" value="reject">
+                                <input name="comment" placeholder="Причина (необязательно)" style="flex:1; min-width: 160px;">
+                                <button type="submit" style="background: rgba(255, 0, 0, 0.2);">Отклонить</button>
+                            </form>
+                            <div class="small" style="margin-top:8px;">
+                                Решение: {{ u.registration_reviewed_at|date:"d.m.Y H:i"|default:"—" }}
+                                {% if u.registration_reviewed_by %} · {{ u.registration_reviewed_by.email }}{% endif %}
+                            </div>
+                            {% if u.registration_review_comment %}
+                                <div class="small">Комментарий: {{ u.registration_review_comment }}</div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="small">Нет заявок для выбранного фильтра.</div>
+    {% endif %}
+</div>
+{% endblock %}

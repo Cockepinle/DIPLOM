@@ -24,7 +24,18 @@
         <div style="margin-top:10px;">
             <label>Сотрудники ({{ users_count }})</label>
             {% if users_count %}
-                {{ form.users }}
+                <div class="user-picker" data-user-picker>
+                    <div class="user-picker__filters">
+                        <input type="search" class="user-picker__search" placeholder="Поиск по ФИО / почте / должности…" autocomplete="off">
+                        <select class="user-picker__role">
+                            <option value="">Все роли</option>
+                        </select>
+                    </div>
+                    <div class="user-picker__list">
+                        {{ form.users }}
+                    </div>
+                    <div class="user-picker__hint" data-user-picker-count></div>
+                </div>
             {% else %}
                 <div class="small">Нет сотрудников с выбранной специальностью.</div>
             {% endif %}
@@ -36,4 +47,66 @@
         </div>
     </form>
 </div>
+
+<script>
+    (function () {
+        const picker = document.querySelector('[data-user-picker]');
+        if (!picker) return;
+
+        const search = picker.querySelector('.user-picker__search');
+        const roleSelect = picker.querySelector('.user-picker__role');
+        const hint = picker.querySelector('[data-user-picker-count]');
+        const listRoot = picker.querySelector('#id_users') || picker;
+        const items = Array.from(listRoot.querySelectorAll('label')).map((label) => {
+            const row = label.closest('div') || label;
+            const text = (label.textContent || '').replace(/\s+/g, ' ').trim();
+            const parts = text.split('·');
+            const role = (parts.length > 1 ? parts[parts.length - 1] : '').trim();
+            return { row, text, role };
+        });
+
+        const roles = Array.from(new Set(items.map((x) => x.role).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'ru'));
+        roles.forEach((r) => {
+            const opt = document.createElement('option');
+            opt.value = r;
+            opt.textContent = r;
+            roleSelect.appendChild(opt);
+        });
+
+        function apply() {
+            const q = (search.value || '').trim().toLowerCase();
+            const role = roleSelect.value;
+            let shown = 0;
+            items.forEach((it) => {
+                const okText = !q || it.text.toLowerCase().includes(q);
+                const okRole = !role || it.role === role;
+                const ok = okText && okRole;
+                it.row.style.display = ok ? '' : 'none';
+                if (ok) shown += 1;
+            });
+            if (hint) hint.textContent = `Показано: ${shown}`;
+        }
+
+        function syncAssignAll() {
+            const assignAll = document.getElementById('{{ form.assign_all.id_for_label }}');
+            const list = picker.querySelector('.user-picker__list');
+            if (!assignAll || !list) return;
+            const disabled = !!assignAll.checked;
+            list.style.opacity = disabled ? '0.55' : '';
+            list.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+                cb.disabled = disabled;
+            });
+            search.disabled = disabled;
+            roleSelect.disabled = disabled;
+        }
+
+        search.addEventListener('input', apply);
+        roleSelect.addEventListener('change', apply);
+        const assignAllEl = document.getElementById('{{ form.assign_all.id_for_label }}');
+        if (assignAllEl) assignAllEl.addEventListener('change', syncAssignAll);
+
+        apply();
+        syncAssignAll();
+    })();
+</script>
 {% endblock %}

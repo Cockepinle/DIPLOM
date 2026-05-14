@@ -6,6 +6,7 @@
         search: '',
         ordering: '',
         filters: [],
+        presetFilters: {},
         count: 0,
         next: null,
         previous: null,
@@ -14,6 +15,14 @@
     };
 
     const resources = [
+        { id: 'dashboard', label: 'Панель', endpoint: null },
+        {
+            id: 'registration-requests',
+            label: 'Заявки',
+            endpoint: '/api/users/',
+            presetFilters: { registration_status: 'PENDING' },
+            disableCreate: true,
+        },
         { id: 'users', label: 'Пользователи', endpoint: '/api/users/' },
         { id: 'specialties', label: 'Специальности', endpoint: '/api/specialties/' },
         { id: 'competencies', label: 'Компетенции', endpoint: '/api/competencies/' },
@@ -41,8 +50,12 @@
 
     const elements = {
         resourceList: document.getElementById('resourceList'),
+        navSearch: document.getElementById('navSearch'),
         resourceTitle: document.getElementById('resourceTitle'),
         resourceMeta: document.getElementById('resourceMeta'),
+        dashboardBtn: document.getElementById('dashboardBtn'),
+        dashboardView: document.getElementById('dashboardView'),
+        tableCard: document.getElementById('tableCard'),
         searchInput: document.getElementById('searchInput'),
         orderingInput: document.getElementById('orderingInput'),
         pageSizeInput: document.getElementById('pageSizeInput'),
@@ -120,6 +133,100 @@
         elements.notice.style.display = message ? 'block' : 'none';
     }
 
+    function setViewMode(mode) {
+        const isDashboard = mode === 'dashboard';
+        if (elements.dashboardView) {
+            elements.dashboardView.style.display = isDashboard ? 'block' : 'none';
+        }
+        const filters = document.querySelector('.filters');
+        if (filters) filters.style.display = isDashboard ? 'none' : 'grid';
+        if (elements.filterRows) elements.filterRows.style.display = isDashboard ? 'none' : 'grid';
+        if (elements.addFilterRow) elements.addFilterRow.style.display = isDashboard ? 'none' : 'inline-flex';
+        if (elements.tableCard) elements.tableCard.style.display = isDashboard ? 'none' : 'block';
+        if (elements.dashboardBtn) {
+            elements.dashboardBtn.style.display = isDashboard ? 'none' : 'inline-flex';
+        }
+        if (elements.refreshBtn) {
+            elements.refreshBtn.textContent = isDashboard ? 'Обновить виджеты' : 'Обновить';
+        }
+    }
+
+    async function fetchCount(endpoint) {
+        if (!endpoint) return null;
+        const params = new URLSearchParams();
+        params.set('page', '1');
+        params.set('page_size', '1');
+        const url = `${endpoint}?${params.toString()}`;
+        const response = await apiFetch(url);
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) return null;
+        if (typeof data?.count === 'number') return data.count;
+        if (Array.isArray(data)) return data.length;
+        if (Array.isArray(data?.results)) return data.results.length;
+        return null;
+    }
+
+    function renderDashboard() {
+        if (!elements.dashboardView) return;
+        elements.dashboardView.innerHTML = '';
+
+        const head = document.createElement('div');
+        head.className = 'dash-head';
+        head.innerHTML = `
+            <div>
+                <div class="dash-title">Панель администратора</div>
+                <div class="dash-subtitle">Быстрые переходы и показатели по данным.</div>
+            </div>
+        `;
+        elements.dashboardView.appendChild(head);
+
+        const quick = document.createElement('div');
+        quick.className = 'dash-quick';
+
+        const tiles = [
+            { id: 'users', title: 'Пользователи', hint: 'Сотрудники и роли' },
+            { id: 'courses', title: 'Курсы', hint: 'Программы обучения' },
+            { id: 'tasks', title: 'Задания', hint: 'Назначения и ответы' },
+            { id: 'tests', title: 'Тесты', hint: 'Проверка знаний' },
+            { id: 'results', title: 'Результаты', hint: 'Оценки и попытки' },
+            { id: 'backups', title: 'Бэкапы', hint: 'Резервные копии' },
+        ];
+
+        const countEls = new Map();
+        tiles.forEach((t) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'dash-tile';
+            btn.innerHTML = `
+                <div class="dash-tile__top">
+                    <div class="dash-tile__title">${t.title}</div>
+                    <div class="dash-tile__count" data-count>—</div>
+                </div>
+                <div class="dash-tile__hint">${t.hint}</div>
+            `;
+            btn.addEventListener('click', () => {
+                const res = resources.find((r) => r.id === t.id);
+                if (res) setResource(res);
+            });
+            quick.appendChild(btn);
+            countEls.set(t.id, btn.querySelector('[data-count]'));
+        });
+        elements.dashboardView.appendChild(quick);
+
+        (async () => {
+            await Promise.all(
+                tiles.map(async (t) => {
+                    const res = resources.find((r) => r.id === t.id);
+                    const el = countEls.get(t.id);
+                    if (!res || !el) return;
+                    el.textContent = '…';
+                    const count = await fetchCount(res.endpoint);
+                    el.textContent = typeof count === 'number' ? String(count) : '—';
+                })
+            );
+        })();
+    }
+
     async function refreshToken() {
         if (!tokenStore.refresh) return false;
         const response = await fetch('/api/auth/token/refresh/', {
@@ -162,6 +269,11 @@
         if (state.ordering) params.set('ordering', state.ordering);
         if (state.page) params.set('page', state.page);
         if (state.pageSize) params.set('page_size', state.pageSize);
+        Object.entries(state.presetFilters || {}).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== '') {
+                params.set(key, value);
+            }
+        });
         state.filters.forEach((filter) => {
             if (filter.field && filter.value !== '') {
                 params.set(filter.field, filter.value);
@@ -228,7 +340,18 @@
             const actionsTd = document.createElement('td');
             const actions = document.createElement('div');
             actions.className = 'row-actions';
-            if (state.resource && state.resource.id === 'backups') {
+            if (state.resource && state.resource.id === 'registration-requests') {
+                const approveBtn = document.createElement('button');
+                approveBtn.className = 'secondary action-approve';
+                approveBtn.textContent = 'Принять';
+                approveBtn.addEventListener('click', () => reviewRegistration(item, true));
+                const rejectBtn = document.createElement('button');
+                rejectBtn.className = 'secondary action-reject';
+                rejectBtn.textContent = 'Отклонить';
+                rejectBtn.addEventListener('click', () => reviewRegistration(item, false));
+                actions.appendChild(approveBtn);
+                actions.appendChild(rejectBtn);
+            } else if (state.resource && state.resource.id === 'backups') {
                 const downloadBtn = document.createElement('button');
                 downloadBtn.className = 'secondary';
                 downloadBtn.textContent = 'Скачать';
@@ -468,11 +591,18 @@
         state.resource = resource;
         state.page = 1;
         state.filters = [];
+        state.presetFilters = resource.presetFilters || {};
         elements.resourceTitle.textContent = resource.label;
-        elements.resourceMeta.textContent = resource.endpoint;
+        elements.resourceMeta.textContent = resource.endpoint || '';
         toggleBackupControls();
-        renderFilters();
-        fetchList();
+        const isDashboard = !resource.endpoint;
+        setViewMode(isDashboard ? 'dashboard' : 'resource');
+        if (isDashboard) {
+            renderDashboard();
+        } else {
+            renderFilters();
+            fetchList();
+        }
         document.querySelectorAll('.nav button').forEach((btn) => {
             btn.classList.toggle('active', btn.dataset.id === resource.id);
         });
@@ -480,6 +610,8 @@
 
     function toggleBackupControls() {
         const isBackups = state.resource && state.resource.id === 'backups';
+        const isDashboard = state.resource && !state.resource.endpoint;
+        const disableCreate = Boolean(state.resource && state.resource.disableCreate);
         if (elements.backupBtn) {
             elements.backupBtn.style.display = isBackups ? 'inline-flex' : 'none';
         }
@@ -490,8 +622,30 @@
             elements.restoreKeyInput.style.display = isBackups ? 'inline-flex' : 'none';
         }
         if (elements.createBtn) {
-            elements.createBtn.style.display = isBackups ? 'none' : 'inline-flex';
+            elements.createBtn.style.display = isBackups || isDashboard || disableCreate ? 'none' : 'inline-flex';
         }
+    }
+
+    async function reviewRegistration(item, approve) {
+        if (!item || !item.id) return;
+        const comment = prompt('Комментарий (необязательно):', '') || '';
+        showNotice('');
+        const url = approve
+            ? `/api/users/${item.id}/registration/approve/`
+            : `/api/users/${item.id}/registration/reject/`;
+        const response = await apiFetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ comment }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            const message = data?.detail || data?.error?.message || 'Не удалось обновить статус.';
+            showNotice(message, true);
+            return;
+        }
+        showNotice(approve ? 'Заявка принята.' : 'Заявка отклонена.');
+        await fetchList();
     }
 
     async function createBackup() {
@@ -565,15 +719,38 @@
         showNotice('Восстановление выполнено. При необходимости обновите страницу.');
     }
 
-    function initNav() {
-        resources.forEach((resource) => {
+    function renderNav(items) {
+        elements.resourceList.innerHTML = '';
+        items.forEach((resource) => {
             const btn = document.createElement('button');
             btn.textContent = resource.label;
             btn.dataset.id = resource.id;
             btn.addEventListener('click', () => setResource(resource));
             elements.resourceList.appendChild(btn);
         });
-        setResource(resources[0]);
+    }
+
+    function initNav() {
+        renderNav(resources);
+        if (elements.navSearch) {
+            elements.navSearch.addEventListener('input', () => {
+                const q = (elements.navSearch.value || '').trim().toLowerCase();
+                if (!q) {
+                    renderNav(resources);
+                    return;
+                }
+                renderNav(resources.filter((r) => (r.label || '').toLowerCase().includes(q)));
+            });
+        }
+        const initial = resources.find((r) => r.id === 'dashboard') || resources[0];
+        setResource(initial);
+    }
+
+    if (elements.dashboardBtn) {
+        elements.dashboardBtn.addEventListener('click', () => {
+            const dashboard = resources.find((r) => r.id === 'dashboard');
+            if (dashboard) setResource(dashboard);
+        });
     }
 
     elements.applyFilters.addEventListener('click', () => {
@@ -614,7 +791,14 @@
     });
 
     elements.createBtn.addEventListener('click', () => openForm('create'));
-    elements.refreshBtn.addEventListener('click', fetchList);
+    elements.refreshBtn.addEventListener('click', () => {
+        const isDashboard = state.resource && !state.resource.endpoint;
+        if (isDashboard) {
+            renderDashboard();
+        } else {
+            fetchList();
+        }
+    });
     elements.modalCancel.addEventListener('click', () => elements.modal.classList.remove('active'));
     elements.modalSave.addEventListener('click', submitForm);
     if (elements.backupBtn) {
@@ -626,6 +810,48 @@
             const file = event.target.files && event.target.files[0];
             event.target.value = '';
             restoreFromFile(file);
+        });
+    }
+
+    const logoutForm = document.getElementById('logoutForm');
+    if (logoutForm) {
+        logoutForm.addEventListener('submit', () => {
+            localStorage.removeItem('admin_access');
+            localStorage.removeItem('admin_refresh');
+            localStorage.removeItem('restore_key');
+        });
+    }
+
+    const tableWrapper = document.querySelector('.table-wrapper');
+    if (tableWrapper) {
+        let isDown = false;
+        let startX = 0;
+        let scrollLeft = 0;
+
+        tableWrapper.addEventListener('mousedown', (event) => {
+            if (event.button !== 0) return;
+            isDown = true;
+            startX = event.pageX - tableWrapper.getBoundingClientRect().left;
+            scrollLeft = tableWrapper.scrollLeft;
+            tableWrapper.classList.add('dragging');
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDown = false;
+            tableWrapper.classList.remove('dragging');
+        });
+
+        tableWrapper.addEventListener('mouseleave', () => {
+            isDown = false;
+            tableWrapper.classList.remove('dragging');
+        });
+
+        tableWrapper.addEventListener('mousemove', (event) => {
+            if (!isDown) return;
+            event.preventDefault();
+            const x = event.pageX - tableWrapper.getBoundingClientRect().left;
+            const walk = x - startX;
+            tableWrapper.scrollLeft = scrollLeft - walk;
         });
     }
 

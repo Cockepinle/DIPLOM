@@ -15,8 +15,8 @@
     {% if courses %}
         <div class="grid">
             {% for course in courses %}
-                <div style="border:1px solid rgba(255,255,255,0.15); border-radius:14px; padding:16px;">
-                    <h2 style="margin-bottom:8px;">{{ course.title }}</h2>
+                <div class="item-card">
+                    <h2 style="margin:0 0 8px;">{{ course.title }}</h2>
                     <div class="small">Специальность: {{ course.specialty|default:"—" }}</div>
                     <div class="small">Участники: {{ course.enrollments_count }}</div>
                     <div class="small">Тесты: {{ course.tests_count }} · Задания: {{ course.tasks_count }}</div>

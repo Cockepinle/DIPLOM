@@ -5,6 +5,7 @@ from pathlib import Path
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
+from django.db import connection
 from django.http import FileResponse
 from django.utils import timezone
 from rest_framework import status
@@ -51,6 +52,103 @@ class TrainingEventViewSet(BaseModelViewSet):
     write_roles = [ROLE_ADMIN, ROLE_ANALYST]
     ordering_fields = ['id', 'created_at']
     filterset_fields = ['user', 'event_type', 'course', 'test', 'task']
+
+    @action(detail=False, methods=['post'])
+    def sync_overdue(self, request):
+        """Call DB procedure to mark overdue enrollments."""
+        if connection.vendor != 'postgresql':
+            return Response(
+                {'detail': 'SQL procedures are available only for PostgreSQL.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        with connection.cursor() as cursor:
+            cursor.execute('CALL sp_mark_overdue_enrollments();')
+            cursor.execute("SELECT COUNT(*) FROM courses_enrollment WHERE status = 'OVERDUE';")
+            overdue_count = cursor.fetchone()[0]
+        return Response({'detail': 'Процедура выполнена.', 'overdue_count': overdue_count})
+
+    @action(detail=False, methods=['post'])
+    def log_manual_event(self, request):
+        """Call DB procedure to append manual training event + audit log."""
+        if connection.vendor != 'postgresql':
+            return Response(
+                {'detail': 'SQL procedures are available only for PostgreSQL.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user_id = request.data.get('user_id') or request.user.id
+        event_type = request.data.get('event_type') or 'TASK_REVIEWED'
+        course_id = request.data.get('course_id')
+        message = request.data.get('message') or 'Событие добавлено через API-процедуру.'
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                'CALL sp_log_manual_event(%s, %s, %s, %s);',
+                [user_id, event_type, course_id, message],
+            )
+
+        return Response({'detail': 'Событие записано через процедуру БД.'})
+
+    @action(detail=False, methods=['get'])
+    def db_objects_stats(self, request):
+        """Read data from SQL views and SQL functions."""
+        if connection.vendor != 'postgresql':
+            return Response(
+                {'detail': 'SQL views/functions are available only for PostgreSQL.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT course_id, course_title, total_enrollments, completed_enrollments, overdue_enrollments, completion_rate
+                FROM vw_course_progress_summary
+                ORDER BY course_id
+                LIMIT 10;
+                """
+            )
+            course_rows = cursor.fetchall()
+
+            cursor.execute(
+                """
+                SELECT user_id, email, assigned_courses, completed_courses, avg_test_score, total_test_attempts
+                FROM vw_employee_performance_summary
+                ORDER BY user_id
+                LIMIT 10;
+                """
+            )
+            employee_rows = cursor.fetchall()
+
+            cursor.execute('SELECT fn_employee_average_score(%s);', [request.user.id])
+            my_avg_score = cursor.fetchone()[0]
+
+        return Response(
+            {
+                'course_progress_summary': [
+                    {
+                        'course_id': row[0],
+                        'course_title': row[1],
+                        'total_enrollments': row[2],
+                        'completed_enrollments': row[3],
+                        'overdue_enrollments': row[4],
+                        'completion_rate': row[5],
+                    }
+                    for row in course_rows
+                ],
+                'employee_performance_summary': [
+                    {
+                        'user_id': row[0],
+                        'email': row[1],
+                        'assigned_courses': row[2],
+                        'completed_courses': row[3],
+                        'avg_test_score': row[4],
+                        'total_test_attempts': row[5],
+                    }
+                    for row in employee_rows
+                ],
+                'my_avg_score_via_function': my_avg_score,
+            }
+        )
 
 
 class DashboardViewSet(BaseModelViewSet):

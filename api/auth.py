@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework import generics
 from rest_framework import permissions
@@ -32,14 +33,14 @@ class RegisterSerializer(serializers.Serializer):
     def validate_email(self, value):
         email = (value or '').strip().lower()
         if User.objects.filter(email__iexact=email).exists():
-            raise serializers.ValidationError('Email is already registered.')
+            raise serializers.ValidationError('Эта эл. почта уже зарегистрирована.')
         return email
 
     def validate(self, attrs):
         password = attrs.get('password')
         password2 = attrs.get('password2')
         if password != password2:
-            raise serializers.ValidationError({'password2': 'Passwords do not match.'})
+            raise serializers.ValidationError({'password2': 'Пароли не совпадают.'})
         try:
             validate_password(password)
         except DjangoValidationError as exc:
@@ -55,11 +56,13 @@ class RegisterSerializer(serializers.Serializer):
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
             role='EMPLOYEE',
-            is_active=True,
+            is_active=False,
             is_staff=False,
             is_superuser=False,
             specialty=specialty,
             position=position,
+            registration_status=User.RegistrationStatus.PENDING,
+            registration_requested_at=timezone.now(),
         )
         user.set_password(validated_data['password'])
         user.save()
@@ -72,14 +75,14 @@ class RegisterView(generics.CreateAPIView):
 
     @extend_schema(
         tags=['Auth'],
-        description='Register a new user. Email is used as login.',
+        description='Заявка на регистрацию нового пользователя. Аккаунт активируется после одобрения администратором.',
         examples=[
             OpenApiExample(
                 'RegisterRequest',
                 value={
                     'email': 'user@example.com',
-                    'first_name': 'John',
-                    'last_name': 'Doe',
+                    'first_name': 'Иван',
+                    'last_name': 'Иванов',
                     'specialty': 1,
                     'position': 1,
                     'password': 'StrongPass123!',
@@ -92,9 +95,10 @@ class RegisterView(generics.CreateAPIView):
                 value={
                 'id': 1,
                 'email': 'user@example.com',
-                'first_name': 'John',
-                'last_name': 'Doe',
+                'first_name': 'Иван',
+                'last_name': 'Иванов',
                 'role': 'EMPLOYEE',
+                'is_active': False,
             },
                 response_only=True,
             ),
@@ -120,7 +124,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         login = attrs.get('login') or attrs.get(self.username_field)
         if not login:
-            raise serializers.ValidationError({'login': 'Email is required.'})
+            raise serializers.ValidationError({'login': 'Укажите адрес эл. почты.'})
         attrs[self.username_field] = login
         return super().validate(attrs)
 
@@ -130,17 +134,17 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
     @extend_schema(
         tags=['Auth'],
-        description='Obtain JWT access and refresh tokens using email.',
+        description='Получение JWT access и refresh токенов по эл. почте.',
         examples=[
             OpenApiExample(
                 'TokenRequest',
-                summary='Login',
-                value={'login': 'user@example.com', 'password': 'secret'},
+                summary='Вход',
+                value={'login': 'user@example.com', 'password': 'пароль'},
                 request_only=True,
             ),
             OpenApiExample(
                 'TokenResponse',
-                summary='Tokens',
+                summary='Токены',
                 value={'refresh': 'jwt-refresh-token', 'access': 'jwt-access-token'},
                 response_only=True,
             ),
@@ -153,7 +157,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 class CustomTokenRefreshView(TokenRefreshView):
     @extend_schema(
         tags=['Auth'],
-        description='Refresh JWT access token.',
+        description='Обновление JWT access токена.',
         examples=[
             OpenApiExample(
                 'RefreshRequest',
@@ -174,7 +178,7 @@ class CustomTokenRefreshView(TokenRefreshView):
 class CustomTokenVerifyView(TokenVerifyView):
     @extend_schema(
         tags=['Auth'],
-        description='Verify JWT access token.',
+        description='Проверка JWT access токена.',
         examples=[
             OpenApiExample(
                 'VerifyRequest',

@@ -6,15 +6,17 @@
 <style>
     .analytics-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
+        margin-bottom: 16px;
     }
     .metric-card {
-        padding: 16px;
+        padding: 16px 18px;
         border-radius: 16px;
         background: var(--card-bg);
         border: 1px solid var(--card-border);
         box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+        min-width: 0;
     }
     .metric-label {
         font-size: 12px;
@@ -25,50 +27,23 @@
         font-size: 20px;
         font-weight: 700;
     }
-    .filters-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 12px;
-    }
-    .data-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0 10px;
-    }
-    .data-table thead th {
-        text-align: left;
-        padding: 6px 10px;
-        font-size: 12px;
-        letter-spacing: 0.02em;
-        opacity: 0.8;
-    }
-    .data-table tbody tr {
-        background: rgba(255, 255, 255, 0.06);
-        box-shadow: 0 6px 16px rgba(8, 12, 30, 0.18);
-    }
-    .data-table tbody td {
-        padding: 12px;
-        vertical-align: middle;
-    }
-    .data-table tbody td:first-child {
-        border-top-left-radius: 12px;
-        border-bottom-left-radius: 12px;
-    }
-    .data-table tbody td:last-child {
-        border-top-right-radius: 12px;
-        border-bottom-right-radius: 12px;
-    }
-    .bars {
-        display: grid;
-        gap: 10px;
-    }
+	    .filters-grid {
+	        display: grid;
+	        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+	        gap: 12px;
+	    }
+	    .bars {
+	        display: grid;
+	        gap: 10px;
+	    }
     .chart-wrap {
         width: 100%;
-        background: rgba(255, 255, 255, 0.04);
+        background: var(--card-bg);
         border: 1px solid var(--card-border);
         border-radius: 16px;
-        padding: 10px 12px;
-        min-height: 220px;
+        padding: 14px;
+        min-height: 250px;
+        overflow: hidden;
     }
     .chart-title {
         display: flex;
@@ -83,8 +58,11 @@
     }
     .chart-svg {
         width: 100%;
-        height: 180px;
+        height: 220px;
         display: block;
+    }
+    .chart-svg--small {
+        height: 180px;
     }
     .dept-chart {
         display: grid;
@@ -93,24 +71,26 @@
     }
     .dept-row {
         display: grid;
-        grid-template-columns: 160px 1fr 60px;
+        grid-template-columns: minmax(120px, 1.15fr) minmax(0, 1fr) 56px;
         gap: 12px;
         align-items: center;
     }
     .dept-row .label {
         font-weight: 600;
         font-size: 13px;
+        line-height: 1.3;
+        word-break: break-word;
     }
     .dept-row .bar {
         height: 10px;
         border-radius: 999px;
-        background: rgba(255,255,255,0.12);
+        background: var(--track-bg);
         overflow: hidden;
     }
     .dept-row .bar span {
         display: block;
         height: 100%;
-        background: linear-gradient(135deg, #6a11cb, #2575fc);
+        background: var(--btn-bg);
     }
     .dept-row .value {
         font-size: 12px;
@@ -125,7 +105,7 @@
     .bar {
         height: 10px;
         border-radius: 999px;
-        background: rgba(255,255,255,0.15);
+        background: var(--track-bg);
         overflow: hidden;
     }
     .bar span {
@@ -147,10 +127,40 @@
         display: grid;
         grid-template-columns: 1.1fr 0.9fr;
         gap: 16px;
+        align-items: stretch;
+        margin-bottom: 16px;
+    }
+    .card {
+        min-width: 0;
+    }
+    .data-table {
+        width: 100%;
+        table-layout: fixed;
+    }
+    .data-table th,
+    .data-table td {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+    .table-scroll {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
     @media (max-width: 900px) {
         .split {
             grid-template-columns: 1fr;
+        }
+        .chart-title {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .dept-row {
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+        .dept-row .value {
+            text-align: left;
         }
     }
 </style>
@@ -261,6 +271,24 @@
         <div class="metric-value">{{ summary.tasks_approved }}</div>
     </div>
 </div>
+<div class="analytics-grid">
+    <div class="metric-card">
+        <div class="metric-label">Completion Rate</div>
+        <div class="metric-value">{{ summary.completion_rate }}%</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-label">Task Approval Rate</div>
+        <div class="metric-value">{{ summary.task_approval_rate }}%</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-label">Overdue Rate</div>
+        <div class="metric-value">{{ summary.overdue_rate }}%</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-label">Активные сотрудники</div>
+        <div class="metric-value">{{ summary.active_learners }}</div>
+    </div>
+</div>
 
 <div class="split">
     <div class="card">
@@ -282,6 +310,7 @@
             <div class="chart-meta">Низкие средние уровни</div>
         </div>
         {% if competencies_rows %}
+            <div class="table-scroll">
             <table class="data-table">
                 <thead>
                     <tr>
@@ -300,6 +329,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         {% else %}
             <div class="small">Компетенции пока не оценены.</div>
         {% endif %}
@@ -321,6 +351,7 @@
 <div class="card">
     <h2>Агрегация по подразделениям</h2>
     {% if department_rows %}
+        <div class="table-scroll">
         <table class="data-table">
             <thead>
                 <tr>
@@ -351,6 +382,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     {% else %}
         <div class="small">Нет данных по подразделениям.</div>
     {% endif %}
@@ -359,6 +391,7 @@
 <div class="card">
     <h2>Агрегация по сотрудникам</h2>
     {% if employee_rows %}
+        <div class="table-scroll">
         <table class="data-table">
             <thead>
                 <tr>
@@ -387,6 +420,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     {% else %}
         <div class="small">Нет данных по сотрудникам.</div>
     {% endif %}
@@ -396,6 +430,7 @@
     <div class="card">
         <h2>История тестов</h2>
         {% if recent_tests %}
+            <div class="table-scroll">
             <table class="data-table">
                 <thead>
                     <tr>
@@ -416,6 +451,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         {% else %}
             <div class="small">Нет данных.</div>
         {% endif %}
@@ -423,6 +459,7 @@
     <div class="card">
         <h2>История заданий</h2>
         {% if recent_tasks %}
+            <div class="table-scroll">
             <table class="data-table">
                 <thead>
                     <tr>
@@ -443,6 +480,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         {% else %}
             <div class="small">Нет данных.</div>
         {% endif %}
@@ -527,31 +565,56 @@
 
 {{ monthly_series|json_script:"monthlyData" }}
 {{ dept_series|json_script:"deptData" }}
+{{ status_series|json_script:"statusData" }}
+{{ tasks_series|json_script:"tasksData" }}
 <script>
     (function () {
         const monthlyRaw = document.getElementById('monthlyData');
         const deptRaw = document.getElementById('deptData');
+        const statusRaw = document.getElementById('statusData');
+        const tasksRaw = document.getElementById('tasksData');
         const monthly = monthlyRaw ? JSON.parse(monthlyRaw.textContent || '[]') : [];
         const dept = deptRaw ? JSON.parse(deptRaw.textContent || '[]') : [];
+        const status = statusRaw ? JSON.parse(statusRaw.textContent || '[]') : [];
+        const tasks = tasksRaw ? JSON.parse(tasksRaw.textContent || '[]') : [];
 
         const svg = document.getElementById('monthlyChart');
         if (svg && monthly.length) {
-            const width = 600;
-            const height = 180;
-            const pad = 24;
+            const width = 760;
+            const height = 220;
+            const padX = 42;
+            const padTop = 20;
+            const padBottom = 34;
             const max = Math.max(...monthly.map(item => item.count), 1);
-            const step = monthly.length > 1 ? (width - pad * 2) / (monthly.length - 1) : 0;
+            const step = monthly.length > 1 ? (width - padX * 2) / (monthly.length - 1) : 0;
             const points = monthly.map((item, index) => {
-                const x = pad + index * step;
-                const y = height - pad - (item.count / max) * (height - pad * 2);
+                const x = padX + index * step;
+                const y = height - padBottom - (item.count / max) * (height - padTop - padBottom);
                 return { x, y, value: item.count, label: item.label };
             });
             const path = points.map((pt, idx) => `${idx === 0 ? 'M' : 'L'}${pt.x},${pt.y}`).join(' ');
-            const area = `${path} L ${points[points.length - 1].x},${height - pad} L ${points[0].x},${height - pad} Z`;
+            const area = `${path} L ${points[points.length - 1].x},${height - padBottom} L ${points[0].x},${height - padBottom} Z`;
+            const gridRows = 4;
+            const grid = Array.from({ length: gridRows + 1 }, (_, i) => {
+                const y = padTop + ((height - padTop - padBottom) / gridRows) * i;
+                return `<line x1="${padX}" y1="${y}" x2="${width - padX}" y2="${y}" stroke="var(--card-border)" stroke-width="1" opacity="0.7" />`;
+            }).join('');
+            const labels = points.map((pt, index) => {
+                const show = monthly.length <= 8 || index % 2 === 0 || index === monthly.length - 1;
+                return show ? `<text x="${pt.x}" y="${height - 12}" text-anchor="middle" fill="var(--muted)" font-size="11">${pt.label}</text>` : '';
+            }).join('');
             svg.innerHTML = `
-                <path d="${area}" fill="rgba(106,17,203,0.12)"></path>
-                <path d="${path}" fill="none" stroke="#6a11cb" stroke-width="3" stroke-linecap="round"></path>
-                ${points.map(pt => `<circle cx="${pt.x}" cy="${pt.y}" r="4" fill="#2575fc"></circle>`).join('')}
+                <defs>
+                    <linearGradient id="analyticsAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.35"></stop>
+                        <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.04"></stop>
+                    </linearGradient>
+                </defs>
+                ${grid}
+                <path d="${area}" fill="url(#analyticsAreaGrad)"></path>
+                <path d="${path}" fill="none" style="stroke: var(--accent);" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                ${points.map(pt => `<circle cx="${pt.x}" cy="${pt.y}" r="4.5" style="fill: var(--accent-2); stroke: var(--card-bg); stroke-width: 2;"></circle>`).join('')}
+                ${labels}
             `;
         }
 
@@ -569,6 +632,36 @@
                 `;
             }).join('');
         }
-    })();
+
+        function drawBars(svgId, data, colorVar) {
+            const chart = document.getElementById(svgId);
+            if (!chart || !data.length) return;
+            const width = 760;
+            const height = 180;
+            const barGap = 16;
+            const leftPad = 130;
+            const rightPad = 26;
+            const topPad = 20;
+            const rowHeight = (height - topPad * 2 - barGap * (data.length - 1)) / data.length;
+            const max = Math.max(...data.map(item => item.value || 0), 1);
+            chart.innerHTML = data.map((item, index) => {
+                const y = topPad + index * (rowHeight + barGap);
+                const value = item.value || 0;
+                const widthPx = ((value / max) * (width - leftPad - rightPad));
+                return `
+                    <text x="8" y="${y + rowHeight * 0.65}" fill="var(--text-primary)" font-size="12">${item.label}</text>
+                    <rect x="${leftPad}" y="${y}" width="${width - leftPad - rightPad}" height="${rowHeight}" rx="8" fill="var(--track-bg)"></rect>
+                    <rect x="${leftPad}" y="${y}" width="${widthPx}" height="${rowHeight}" rx="8" fill="var(${colorVar})"></rect>
+                    <text x="${Math.min(leftPad + widthPx + 8, width - 6)}" y="${y + rowHeight * 0.65}" fill="var(--muted)" font-size="12">${value}</text>
+                `;
+            }).join('');
+        }
+
+        drawBars('statusChart', status, '--accent');
+        drawBars('tasksChart', tasks, '--accent-2');
+
+        })();
 </script>
 {% endblock %}
+
+

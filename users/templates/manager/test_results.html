@@ -14,7 +14,7 @@
 <div class="card">
     <h2>Попытки сотрудников</h2>
     {% if results %}
-        <table style="width:100%; border-collapse:collapse;">
+        <table class="data-table">
             <thead>
                 <tr style="text-align:left;">
                     <th style="padding:8px 6px;">Сотрудник</th>
@@ -27,7 +27,7 @@
             </thead>
             <tbody>
                 {% for result in results %}
-                    <tr style="border-top:1px solid rgba(255,255,255,0.12);{% if result.status == 'DECLINED' %} color:#ff8fa3;{% endif %}">
+                    <tr{% if result.status == 'DECLINED' %} style="color:#ff8fa3;"{% endif %}>
                         <td style="padding:8px 6px;">
                             {{ result.user.last_name }} {{ result.user.first_name }}
                         </td>

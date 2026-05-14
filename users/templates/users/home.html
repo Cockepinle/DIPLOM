@@ -10,30 +10,55 @@
         })();
     </script>
     <style>
+        @font-face {
+            font-family: "AppFont";
+            src: url("/static/fonts/DejaVuSans.ttf") format("truetype");
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: "AppFont";
+            src: url("/static/fonts/DejaVuSans-Bold.ttf") format("truetype");
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
         :root {
-            --bg: linear-gradient(135deg, #2b1055, #7597de);
-            --text: #fff;
-            --muted: #e7e7ff;
-            --card-bg: rgba(255, 255, 255, 0.15);
-            --card-border: rgba(255, 255, 255, 0.2);
-            --btn-bg: linear-gradient(135deg, #6a11cb, #2575fc);
-            --btn-text: #fff;
+            --font: "AppFont", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+            --bg:
+                radial-gradient(1200px 720px at 20% 0%, rgba(157, 255, 43, 0.10), transparent 60%),
+                radial-gradient(900px 520px at 92% 18%, rgba(255, 255, 255, 0.06), transparent 62%),
+                linear-gradient(165deg, #07090d, #0b1016 55%, #0a0f14);
+            --text: rgba(241, 245, 255, 0.94);
+            --muted: rgba(215, 222, 240, 0.62);
+            --card-bg: rgba(255, 255, 255, 0.06);
+            --card-border: rgba(255, 255, 255, 0.10);
+            --btn-bg: linear-gradient(135deg, #c7ff66, #9dff2b);
+            --btn-text: #15171c;
+            --shadow-card:
+                0 22px 70px rgba(0, 0, 0, 0.55),
+                0 1px 0 rgba(255, 255, 255, 0.06) inset;
         }
         :root[data-theme="light"] {
-            --bg: #f7f7fb;
-            --text: #111;
-            --muted: #5a5a68;
-            --card-bg: #ffffff;
-            --card-border: rgba(0, 0, 0, 0.12);
-            --btn-bg: #111;
-            --btn-text: #fff;
+            --bg:
+                radial-gradient(1200px 720px at 18% 0%, rgba(255, 255, 255, 0.92), transparent 62%),
+                radial-gradient(900px 520px at 92% 18%, rgba(255, 255, 255, 0.75), transparent 60%),
+                linear-gradient(165deg, #f1f2f6, #e9ebf1 55%, #e3e6ee);
+            --text: #15171c;
+            --muted: rgba(34, 39, 49, 0.68);
+            --card-bg: rgba(255, 255, 255, 0.72);
+	            --card-border: rgba(16, 24, 40, 0.16);
+            --btn-bg: linear-gradient(135deg, #c7ff66, #9dff2b);
+            --btn-text: #15171c;
+            --shadow-card: 0 22px 70px rgba(16, 24, 40, 0.12);
         }
         body {
             margin: 0;
             min-height: 100vh;
             background: var(--bg);
             color: var(--text);
-            font-family: 'Segoe UI', sans-serif;
+            font-family: var(--font);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -47,7 +72,7 @@
             padding: 32px;
             text-align: center;
             backdrop-filter: blur(12px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            box-shadow: var(--shadow-card);
         }
         .home-card p {
             color: var(--muted);
@@ -66,6 +91,11 @@
             color: var(--btn-text);
             text-decoration: none;
             font-weight: 600;
+        }
+        .home-actions a.secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--card-border);
         }
         .theme-toggle {
             position: fixed;
@@ -100,7 +130,8 @@
         <p>Добро пожаловать в корпоративную систему обучения ООО «Арт Кулинария»</p>
         <div class="home-actions">
             <a href="{% url 'login' %}">Войти</a>
-            <a href="#">Регистрация (через администратора)</a>
+            <a href="{% url 'register' %}">Регистрация (заявка)</a>
+            <a class="secondary" href="{% url 'password_reset' %}">Забыли пароль?</a>
         </div>
     </div>
     <script>

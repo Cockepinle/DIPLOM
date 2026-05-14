@@ -1,0 +1,452 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Чат{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .tg-shell {
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        gap: 12px;
+        min-height: calc(100vh - 160px);
+    }
+    .tg-header {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        backdrop-filter: blur(10px);
+    }
+    .tg-back {
+        flex: 0 0 auto;
+        border: 1px solid var(--card-border);
+        background: var(--card-bg);
+    }
+    .tg-back:hover {
+        border-color: var(--nav-active-bg);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+    .tg-title {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+    .tg-title h1 {
+        margin: 0;
+        font-size: 18px;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .tg-sub {
+        opacity: 0.8;
+        font-size: 13px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .tg-thread {
+        position: relative;
+        border-radius: 18px;
+        background: radial-gradient(1200px 700px at 50% -10%, rgba(157,255,43,0.16), transparent 55%),
+                    radial-gradient(900px 520px at 0% 60%, rgba(59,130,246,0.14), transparent 60%),
+                    var(--card-bg);
+        border: 1px solid var(--card-border);
+        overflow: hidden;
+    }
+    .tg-thread__inner {
+        max-height: calc(100vh - 320px);
+        overflow: auto;
+        padding: 16px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .tg-date-chip {
+        align-self: center;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        opacity: 0.85;
+        background: rgba(0, 0, 0, 0.22);
+        border: 1px solid var(--card-border);
+        backdrop-filter: blur(8px);
+    }
+    .tg-row {
+        display: flex;
+        gap: 10px;
+    }
+    .tg-row.me {
+        justify-content: flex-end;
+    }
+    .tg-bubble {
+        max-width: min(680px, 82%);
+        padding: 10px 12px;
+        border-radius: 18px;
+        border: 1px solid var(--card-border);
+        background: var(--card-bg);
+    }
+    .tg-row.me .tg-bubble {
+        background: rgba(157,255,43,0.22);
+        border-color: rgba(157,255,43,0.35);
+    }
+    .tg-text {
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    .tg-meta {
+        margin-top: 6px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 12px;
+        opacity: 0.78;
+    }
+    .tg-meta__actions {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+    }
+    .tg-icon-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 28px;
+        border-radius: 10px;
+        border: 1px solid var(--card-border);
+        background: rgba(0,0,0,0.16);
+        color: inherit;
+        cursor: pointer;
+        padding: 0 10px;
+        gap: 6px;
+    }
+    .tg-icon-btn:hover {
+        border-color: rgba(255,95,110,0.45);
+        box-shadow: 0 0 0 3px rgba(255,95,110,0.12);
+    }
+    .tg-icon-btn svg { width: 16px; height: 16px; opacity: 0.9; }
+    .tg-files {
+        margin-top: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .tg-file {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: 14px;
+        background: rgba(0,0,0,0.18);
+        border: 1px solid var(--card-border);
+    }
+    .tg-file a {
+        color: inherit;
+        text-decoration: none;
+        font-weight: 700;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 520px;
+    }
+    .tg-file .small {
+        opacity: 0.75;
+    }
+    .tg-file__img {
+        display: grid;
+        gap: 6px;
+    }
+    .tg-file__img img {
+        max-width: 360px;
+        width: 100%;
+        border-radius: 14px;
+        border: 1px solid var(--card-border);
+        background: rgba(0,0,0,0.12);
+    }
+    .tg-compose {
+        padding: 12px 14px;
+        border-radius: 18px;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        backdrop-filter: blur(10px);
+    }
+    .tg-compose__row {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+    }
+    .tg-attach {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        border: 1px solid var(--card-border);
+        background: var(--card-bg);
+        cursor: pointer;
+        user-select: none;
+        flex: 0 0 auto;
+    }
+    .tg-attach svg { width: 22px; height: 22px; opacity: 0.92; }
+    .tg-compose textarea {
+        width: 100%;
+        resize: none;
+        min-height: 44px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        border: 1px solid var(--card-border);
+        background: var(--card-bg);
+        color: inherit;
+        outline: none;
+    }
+    .tg-compose textarea:focus {
+        border-color: rgba(157,255,43,0.55);
+        box-shadow: 0 0 0 3px rgba(157,255,43,0.14);
+    }
+    .tg-picked {
+        margin-top: 10px;
+        display: none;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .tg-picked .chip {
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(0,0,0,0.18);
+        border: 1px solid var(--card-border);
+        font-size: 12px;
+        max-width: 280px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .tg-submit {
+        height: 44px;
+        padding: 0 16px;
+        border-radius: 14px;
+        border: 1px solid rgba(157,255,43,0.45);
+        background: linear-gradient(135deg, rgba(199,255,102,0.95), rgba(157,255,43,0.95));
+        color: #15171c;
+        font-weight: 800;
+        cursor: pointer;
+        flex: 0 0 auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tg-shell">
+    <div class="tg-header">
+        <a class="btn secondary tg-back" href="{% url 'chat_inbox' %}">Все чаты</a>
+        <div class="tg-title">
+            <h1>{{ other.get_full_name|default:other.email }}</h1>
+            <div class="tg-sub">{{ other.email }}{% if other.department %} · {{ other.department }}{% endif %}</div>
+        </div>
+    </div>
+
+    <div class="tg-thread">
+        <div class="tg-thread__inner" id="threadScroll">
+            <div class="tg-date-chip">{% now "j E" %}</div>
+            {% if messages %}
+                {% for m in messages %}
+                    <div class="tg-row {% if m.sender_id == request.user.id %}me{% endif %}">
+                        <div class="tg-bubble">
+                            {% if m.sender_id != request.user.id %}
+                                <div class="small" style="opacity:0.86; margin-bottom:6px;">{{ m.sender.get_full_name|default:m.sender.email }}</div>
+                            {% endif %}
+
+                            {% if m.text %}
+                                <div class="tg-text">{{ m.text }}</div>
+                            {% endif %}
+
+                            {% with atts=m.attachments.all %}
+                            {% if atts %}
+                                <div class="tg-files">
+                                    {% for a in atts %}
+                                        {% if a.is_image %}
+                                            <div class="tg-file__img">
+                                                <img src="{{ a.file.url }}" alt="{{ a.original_name }}">
+                                                <div class="tg-file">
+                                                    <a href="{{ a.file.url }}" target="_blank" rel="noopener">{{ a.original_name|default:"image" }}</a>
+                                                    <span class="small">{{ a.size|filesizeformat }}</span>
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <div class="tg-file">
+                                                <a href="{{ a.file.url }}" target="_blank" rel="noopener">{{ a.original_name|default:"file" }}</a>
+                                                <span class="small">{{ a.size|filesizeformat }}</span>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            {% endwith %}
+
+                            <div class="tg-meta">
+                                <span>{{ m.created_at|date:"H:i" }}</span>
+                                <span class="tg-meta__actions">
+                                    {% if m.sender_id == request.user.id %}
+                                        {% if not other_last_read_message_id or m.id > other_last_read_message_id %}
+                                            <form method="post" action="{% url 'chat_message_delete' chat.id m.id %}" style="display:inline;">
+                                                {% csrf_token %}
+                                                <button class="tg-icon-btn" type="submit" title="Удалить (пока не прочитано)">
+                                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                        <path d="M4 7h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                                        <path d="M10 11v7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                                        <path d="M14 11v7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                                        <path d="M6 7 7 20h10l1-13" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                                                        <path d="M9 7V4h6v3" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                                                    </svg>
+                                                    <span>Удалить</span>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="small" style="opacity:0.85;">Пока нет сообщений. Напишите первое.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="tg-compose">
+        <form method="post" enctype="multipart/form-data" id="chatForm">
+            {% csrf_token %}
+            <div class="tg-compose__row">
+                <label class="tg-attach" title="Прикрепить файлы">
+                    <input type="file" name="files" id="fileInput" multiple style="display:none;">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12.5 6.5 7.8 11.2a3 3 0 0 0 4.2 4.2l6.3-6.3a5 5 0 1 0-7.1-7.1L5.9 7.2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </label>
+                {{ form.text }}
+                <button class="tg-submit" type="submit">Отправить</button>
+            </div>
+            <div class="tg-picked" id="picked"></div>
+            {% if form.errors %}
+                <div class="small" style="margin-top:10px; color:#ff8fa3;">
+                    {{ form.non_field_errors }}
+                    {{ form.text.errors }}
+                    {{ form.files.errors }}
+                </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const thread = document.getElementById('threadScroll');
+        if (thread) thread.scrollTop = thread.scrollHeight;
+
+        const input = document.getElementById('fileInput');
+        const picked = document.getElementById('picked');
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.innerText = text;
+            return div.innerHTML;
+        }
+
+        if (input && picked) {
+            function renderPicked() {
+                const files = Array.from(input.files || []);
+                if (!files.length) {
+                    picked.style.display = 'none';
+                    picked.innerHTML = '';
+                    return;
+                }
+                picked.style.display = 'flex';
+                picked.innerHTML = files.slice(0, 12).map(f => 
+                    `<span class="chip" title="${escapeHtml(f.name)}">${escapeHtml(f.name)}</span>`
+                ).join('');
+            }
+
+            input.addEventListener('change', renderPicked);
+        }
+
+        const form = document.getElementById('chatForm');
+        const textarea = document.getElementById('id_text');
+
+        const chatId = "{{ chat.id }}";
+        const currentUserId = "{{ request.user.id }}";
+
+        const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+        const chatSocket = new WebSocket(
+            protocol + "://" + window.location.host + "/ws/chat/" + chatId + "/"
+        );
+
+        chatSocket.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+
+            const row = document.createElement('div');
+            row.className = 'tg-row';
+
+            if (String(data.sender_id) === String(currentUserId)) {
+                row.classList.add('me');
+            }
+
+            let senderHtml = '';
+            if (String(data.sender_id) !== String(currentUserId)) {
+                senderHtml = `
+                    <div class="small" style="opacity:0.86; margin-bottom:6px;">
+                        ${escapeHtml(data.sender_name)}
+                    </div>
+                `;
+            }
+
+            row.innerHTML = `
+                <div class="tg-bubble">
+                    ${senderHtml}
+                    <div class="tg-text">${escapeHtml(data.message)}</div>
+                    <div class="tg-meta">
+                        <span>${escapeHtml(data.created_at)}</span>
+                        <span class="tg-meta__actions"></span>
+                    </div>
+                </div>
+            `;
+
+            thread.appendChild(row);
+            thread.scrollTop = thread.scrollHeight;
+        };
+
+        chatSocket.onclose = function () {
+            console.error('WebSocket соединение закрыто');
+        };
+
+        form.addEventListener('submit', function (event) {
+            const files = input ? Array.from(input.files || []) : [];
+            const text = textarea.value.trim();
+
+            if (files.length > 0) {
+                return;
+            }
+
+            event.preventDefault();
+
+            if (!text) {
+                return;
+            }
+
+            chatSocket.send(JSON.stringify({
+                message: text
+            }));
+
+            textarea.value = '';
+        });
+    })();
+</script>
+{% endblock %}

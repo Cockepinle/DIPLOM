@@ -18,16 +18,61 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def env_bool(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {'1', 'true', 'yes', 'y', 'on'}
+
+
+def env_list(name, default=None):
+    value = os.getenv(name)
+    if value is None:
+        return list(default or [])
+    items = [v.strip() for v in value.split(',')]
+    return [v for v in items if v]
+
+
+# Optional .env support (requires installing python-dotenv).
+try:
+    from dotenv import load_dotenv  # type: ignore
+
+    # Prefer values from .env during local development even if the host process
+    # already has environment variables set (common when re-running the server
+    # in the same shell session).
+    load_dotenv(BASE_DIR / '.env', override=True)
+except Exception:
+    env_path = BASE_DIR / '.env'
+    if env_path.exists():
+        try:
+            for raw_line in env_path.read_text(encoding='utf-8').splitlines():
+                line = raw_line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                if '=' not in line:
+                    continue
+                key, value = line.split('=', 1)
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if key:
+                    os.environ[key] = value
+        except Exception:
+            pass
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-qf(n3@r=q8_ovmsk_tf&%zj08sh1spe)3b4twd8q#=w6(es&tq'
+SECRET_KEY = os.getenv(
+    'SECRET_KEY',
+    'django-insecure-qf(n3@r=q8_ovmsk_tf&%zj08sh1spe)3b4twd8q#=w6(es&tq',
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env_bool('DEBUG', True)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', ['localhost', '127.0.0.1'] if DEBUG else [])
 LOGIN_REDIRECT_URL = '/redirect/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
@@ -35,12 +80,15 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
+    'channels',
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'drf_spectacular',
     'django_filters',
     'api',
+    'chat',
     'users',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -53,11 +101,13 @@ INSTALLED_APPS = [
     'results',
     'feedback',
     'analytics',
+    'django_extensions',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -83,7 +133,12 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
-
+ASGI_APPLICATION = 'config.asgi.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
@@ -130,13 +185,17 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 
 USE_TZ = True
+
+LOCALE_PATHS = [
+    BASE_DIR / 'locale',
+]
 
 
 # Static files (CSS, JavaScript, Images)
@@ -177,8 +236,8 @@ SIMPLE_JWT = {
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Learning Platform API',
-    'DESCRIPTION': 'REST API for users, courses, tests, results, feedback, and analytics.',
+    'TITLE': 'API АРТ КУЛИНАРИЯ',
+    'DESCRIPTION': 'REST API для пользователей, курсов, тестов, результатов, обратной связи и аналитики.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'SERVE_PERMISSIONS': ['rest_framework.permissions.AllowAny'],
@@ -195,3 +254,51 @@ SPECTACULAR_SETTINGS = {
 
 # Emergency restore key for backup/restore without auth.
 BACKUP_RESTORE_KEY = os.getenv('BACKUP_RESTORE_KEY', '')
+
+# Email (password reset, notifications)
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@localhost')
+SERVER_EMAIL = os.getenv('SERVER_EMAIL', DEFAULT_FROM_EMAIL)
+
+EMAIL_HOST = os.getenv('EMAIL_HOST', '')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = env_bool('EMAIL_USE_TLS', True)
+EMAIL_USE_SSL = env_bool('EMAIL_USE_SSL', False)
+if EMAIL_USE_SSL:
+    EMAIL_USE_TLS = False
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '20'))
+
+
+# Password reset token lifetime (seconds). Keep reasonably short.
+PASSWORD_RESET_TIMEOUT = int(os.getenv('PASSWORD_RESET_TIMEOUT', str(60 * 60 * 24)))  # 24h
+
+# Chat upload limits (per message).
+CHAT_MAX_UPLOAD_MB = int(os.getenv('CHAT_MAX_UPLOAD_MB', '20'))
+CHAT_MAX_FILES_PER_MESSAGE = int(os.getenv('CHAT_MAX_FILES_PER_MESSAGE', '5'))
+
+# If you're behind a reverse proxy (nginx, traefik), set:
+# USE_X_FORWARDED_HOST=1 and SECURE_PROXY_SSL_HEADER_NAME/SECURE_PROXY_SSL_HEADER_VALUE
+USE_X_FORWARDED_HOST = env_bool('USE_X_FORWARDED_HOST', False)
+_proxy_header_name = os.getenv('SECURE_PROXY_SSL_HEADER_NAME', '')
+_proxy_header_value = os.getenv('SECURE_PROXY_SSL_HEADER_VALUE', '')
+if _proxy_header_name and _proxy_header_value:
+    SECURE_PROXY_SSL_HEADER = (_proxy_header_name, _proxy_header_value)
+
+
+# In local dev (DEBUG=1), default to console backend unless SMTP is fully configured.
+# In production (DEBUG=0), SMTP is used by default, but we fail fast if SMTP is not configured.
+EMAIL_CONFIGURED = bool(EMAIL_HOST and EMAIL_HOST_USER and EMAIL_HOST_PASSWORD)  # noqa: F405
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND') or (
+    'django.core.mail.backends.smtp.EmailBackend'
+    if (EMAIL_CONFIGURED or not DEBUG)
+    else 'django.core.mail.backends.console.EmailBackend'
+)
+
+if not DEBUG and not EMAIL_CONFIGURED and not os.getenv('EMAIL_BACKEND'):
+    from django.core.exceptions import ImproperlyConfigured
+
+    raise ImproperlyConfigured(
+        'SMTP is not configured: set EMAIL_HOST/EMAIL_HOST_USER/EMAIL_HOST_PASSWORD '
+        '(or explicitly set EMAIL_BACKEND).'
+    )

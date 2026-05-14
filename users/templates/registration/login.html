@@ -11,39 +11,64 @@
     </script>
 
     <style>
+        @font-face {
+            font-family: "AppFont";
+            src: url("/static/fonts/DejaVuSans.ttf") format("truetype");
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: "AppFont";
+            src: url("/static/fonts/DejaVuSans-Bold.ttf") format("truetype");
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
         :root {
-            --bg: linear-gradient(135deg, #2b1055, #7597de);
-            --text: #fff;
-            --muted: #e0e0e0;
-            --card-bg: rgba(255, 255, 255, 0.15);
-            --card-border: rgba(255, 255, 255, 0.2);
-            --input-bg: rgba(255, 255, 255, 0.25);
-            --input-text: #fff;
-            --input-border: transparent;
-            --btn-bg: linear-gradient(135deg, #6a11cb, #2575fc);
-            --btn-text: #fff;
-            --link: #e0e0ff;
-            --danger-bg: rgba(255, 0, 0, 0.2);
-            --danger-text: #ffdede;
+            --font: "AppFont", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+            --bg:
+                radial-gradient(1200px 720px at 20% 0%, rgba(157, 255, 43, 0.10), transparent 60%),
+                radial-gradient(900px 520px at 92% 18%, rgba(255, 255, 255, 0.06), transparent 62%),
+                linear-gradient(165deg, #07090d, #0b1016 55%, #0a0f14);
+            --text: rgba(241, 245, 255, 0.94);
+            --muted: rgba(215, 222, 240, 0.62);
+            --card-bg: rgba(255, 255, 255, 0.06);
+            --card-border: rgba(255, 255, 255, 0.10);
+            --input-bg: rgba(255, 255, 255, 0.08);
+            --input-text: rgba(241, 245, 255, 0.92);
+            --input-border: rgba(255, 255, 255, 0.12);
+            --btn-bg: linear-gradient(135deg, #c7ff66, #9dff2b);
+            --btn-text: #15171c;
+            --link: rgba(241, 245, 255, 0.92);
+            --danger-bg: rgba(255, 59, 59, 0.16);
+            --danger-text: rgba(255, 220, 220, 0.95);
+            --shadow-card:
+                0 22px 70px rgba(0, 0, 0, 0.55),
+                0 1px 0 rgba(255, 255, 255, 0.06) inset;
         }
         :root[data-theme="light"] {
-            --bg: #f7f7fb;
-            --text: #111;
-            --muted: #5a5a68;
-            --card-bg: #ffffff;
-            --card-border: rgba(0, 0, 0, 0.12);
-            --input-bg: #f3f3f6;
-            --input-text: #111;
-            --input-border: rgba(0, 0, 0, 0.15);
-            --btn-bg: #111;
-            --btn-text: #fff;
-            --link: #111;
-            --danger-bg: #ffe3e3;
-            --danger-text: #b11;
+            --bg:
+                radial-gradient(1200px 720px at 18% 0%, rgba(255, 255, 255, 0.92), transparent 62%),
+                radial-gradient(900px 520px at 92% 18%, rgba(255, 255, 255, 0.75), transparent 60%),
+                linear-gradient(165deg, #f1f2f6, #e9ebf1 55%, #e3e6ee);
+            --text: #15171c;
+            --muted: rgba(34, 39, 49, 0.68);
+            --card-bg: rgba(255, 255, 255, 0.72);
+            --card-border: rgba(16, 24, 40, 0.16);
+            --input-bg: rgba(255, 255, 255, 0.68);
+            --input-text: #15171c;
+            --input-border: rgba(16, 24, 40, 0.10);
+            --btn-bg: linear-gradient(135deg, #c7ff66, #9dff2b);
+            --btn-text: #15171c;
+            --link: #15171c;
+            --danger-bg: rgba(255, 59, 59, 0.12);
+            --danger-text: #a61b1b;
+            --shadow-card: 0 22px 70px rgba(16, 24, 40, 0.12);
         }
         * {
             box-sizing: border-box;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: var(--font);
         }
 
         body {
@@ -62,7 +87,7 @@
             border-radius: 20px;
             background: var(--card-bg);
             backdrop-filter: blur(15px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+            box-shadow: var(--shadow-card);
             color: var(--text);
             text-align: center;
             border: 1px solid var(--card-border);
@@ -167,7 +192,7 @@
         <input
             type="text"
             name="username"
-            placeholder="Email"
+            placeholder="Эл. почта"
             required
         >
 
@@ -184,6 +209,9 @@
     <div class="footer">
         Нет аккаунта?
         <a href="{% url 'register' %}">Регистрация</a>
+    </div>
+    <div class="footer" style="margin-top:10px;">
+        <a href="{% url 'password_reset' %}">Забыли пароль?</a>
     </div>
 </div>
 

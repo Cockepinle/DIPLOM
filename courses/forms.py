@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth import get_user_model
+import os
 
 from .models import Course, Task, TaskSubmission, CourseMaterial
 from tests.models import Test
@@ -7,13 +8,55 @@ from tests.models import Test
 User = get_user_model()
 
 
+class RussianClearableFileInput(forms.ClearableFileInput):
+    initial_text = 'Текущий файл'
+    input_text = 'Изменить'
+    clear_checkbox_label = 'Удалить'
+
+
+class MultipleFileInput(forms.FileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    widget = MultipleFileInput
+
+    def clean(self, data, initial=None):
+        if not data:
+            return []
+        if not isinstance(data, (list, tuple)):
+            data = [data]
+        return [super().clean(item, initial) for item in data]
+
+
+def _attach_file_preview(widget, value, *, preview='auto', is_image=None):
+    if not widget:
+        return
+    attrs = widget.attrs
+    attrs.setdefault('data-preview', preview)
+    if value and getattr(value, 'url', None):
+        attrs['data-current-url'] = value.url
+        attrs['data-current-name'] = os.path.basename(getattr(value, 'name', '') or '') or 'Файл'
+        if is_image is not None:
+            attrs['data-current-is-image'] = '1' if is_image else '0'
+
+
 class CourseForm(forms.ModelForm):
     class Meta:
         model = Course
         fields = ('title', 'description', 'cover_image', 'specialty', 'is_active')
         widgets = {
-            'cover_image': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
+            'cover_image': RussianClearableFileInput(attrs={'accept': 'image/*'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _attach_file_preview(
+            self.fields['cover_image'].widget,
+            getattr(self.instance, 'cover_image', None),
+            preview='image',
+            is_image=True,
+        )
 
 
 class CourseAssignForm(forms.Form):
@@ -72,17 +115,31 @@ class TaskForm(forms.ModelForm):
         )
         widgets = {
             'due_date': forms.DateInput(attrs={'type': 'date'}),
-            'attachment': forms.ClearableFileInput(
+            'attachment': RussianClearableFileInput(
                 attrs={'accept': '.pdf,.doc,.docx,.odt,.rtf,.txt,.xlsx,.xls,.ppt,.pptx'}
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _attach_file_preview(
+            self.fields['attachment'].widget,
+            getattr(self.instance, 'attachment', None),
+            preview='file',
+            is_image=False,
+        )
 
 
 class TaskAssignForm(forms.Form):
     users = forms.ModelMultipleChoiceField(
         queryset=User.objects.none(),
         widget=forms.CheckboxSelectMultiple,
-        label='Сотрудники'
+        label='Сотрудники',
+        required=False,
+    )
+    assign_all = forms.BooleanField(
+        required=False,
+        label='Выбрать всех',
     )
     due_date = forms.DateField(
         required=False,
@@ -102,6 +159,14 @@ class TaskAssignForm(forms.Form):
         self.fields['users'].queryset = users_qs
         self.fields['users'].label_from_instance = self._user_label
 
+    def clean(self):
+        cleaned_data = super().clean()
+        users = cleaned_data.get('users')
+        assign_all = cleaned_data.get('assign_all')
+        if not assign_all and not users:
+            self.add_error('users', 'Выберите сотрудников или отметьте "Выбрать всех".')
+        return cleaned_data
+
     def _user_label(self, user):
         name = f"{user.last_name} {user.first_name}".strip() or user.email
         position = getattr(user, 'position', None)
@@ -115,6 +180,19 @@ class TaskSubmissionForm(forms.ModelForm):
     class Meta:
         model = TaskSubmission
         fields = ('content', 'file')
+        widgets = {
+            'file': RussianClearableFileInput(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'file' in self.fields:
+            _attach_file_preview(
+                self.fields['file'].widget,
+                getattr(self.instance, 'file', None),
+                preview='file',
+                is_image=False,
+            )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -126,6 +204,17 @@ class TaskSubmissionForm(forms.ModelForm):
 
 
 class CourseMaterialForm(forms.ModelForm):
+    files = MultipleFileField(
+        required=False,
+        label='Файлы',
+        widget=MultipleFileInput(
+            attrs={
+                'multiple': True,
+                'accept': '.pdf,.doc,.docx,.odt,.rtf,.txt,.xlsx,.xls,.ppt,.pptx',
+            }
+        ),
+    )
+
     class Meta:
         model = CourseMaterial
         fields = (
@@ -143,10 +232,10 @@ class CourseMaterialForm(forms.ModelForm):
         )
         widgets = {
             'accent_color': forms.TextInput(attrs={'type': 'color'}),
-            'file': forms.ClearableFileInput(
+            'file': RussianClearableFileInput(
                 attrs={'accept': '.pdf,.doc,.docx,.odt,.rtf,.txt,.xlsx,.xls,.ppt,.pptx'}
             ),
-            'image': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
+            'image': RussianClearableFileInput(attrs={'accept': 'image/*'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -157,11 +246,27 @@ class CourseMaterialForm(forms.ModelForm):
             self.fields['course'].queryset = course_qs
         if tests_qs is not None:
             self.fields['test'].queryset = tests_qs
+        _attach_file_preview(
+            self.fields['image'].widget,
+            getattr(self.instance, 'image', None),
+            preview='image',
+            is_image=True,
+        )
+        _attach_file_preview(
+            self.fields['file'].widget,
+            getattr(self.instance, 'file', None),
+            preview='file',
+            is_image=False,
+        )
 
     def clean(self):
         cleaned_data = super().clean()
         course = cleaned_data.get('course')
         test = cleaned_data.get('test')
+        files = cleaned_data.get('files') or []
+        material_type = cleaned_data.get('material_type')
         if test and course and test.course_id != course.id:
             self.add_error('test', 'Выбранный тест не относится к выбранному курсу.')
+        if files and material_type != CourseMaterial.MaterialType.FILE:
+            self.add_error('material_type', 'Загрузка нескольких файлов возможна только для материалов типа "Файл".')
         return cleaned_data

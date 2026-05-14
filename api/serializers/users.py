@@ -48,6 +48,11 @@ class UserSerializer(serializers.ModelSerializer):
             'specialty_name',
             'avatar',
             'is_active',
+            'registration_status',
+            'registration_requested_at',
+            'registration_reviewed_at',
+            'registration_reviewed_by',
+            'registration_review_comment',
             'is_staff',
             'is_superuser',
             'date_joined',
@@ -66,7 +71,17 @@ class UserSerializer(serializers.ModelSerializer):
         if request and request.user and not (
             getattr(request.user, 'is_superuser', False) or getattr(request.user, 'role', None) == 'ADMIN'
         ):
-            for field in ['is_staff', 'is_superuser', 'role', 'is_active']:
+            for field in [
+                'is_staff',
+                'is_superuser',
+                'role',
+                'is_active',
+                'registration_status',
+                'registration_requested_at',
+                'registration_reviewed_at',
+                'registration_reviewed_by',
+                'registration_review_comment',
+            ]:
                 attrs.pop(field, None)
         role = attrs.get('role') or (self.instance.role if self.instance else User.Role.EMPLOYEE)
         if role == User.Role.EMPLOYEE:
@@ -187,7 +202,7 @@ class UserCompetencySerializer(serializers.ModelSerializer):
 
     def validate_level(self, value):
         if value < 0 or value > 10:
-            raise serializers.ValidationError('Level must be between 0 and 10.')
+            raise serializers.ValidationError('Уровень должен быть от 0 до 10.')
         return value
 
 
@@ -227,5 +242,5 @@ class CompetencyAssessmentSerializer(serializers.ModelSerializer):
 
     def validate_level(self, value):
         if value < 0 or value > 10:
-            raise serializers.ValidationError('Level must be between 0 and 10.')
+            raise serializers.ValidationError('Уровень должен быть от 0 до 10.')
         return value

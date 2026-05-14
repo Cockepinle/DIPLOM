@@ -11,7 +11,7 @@
 <div class="card">
     <h2>Черновики тестов</h2>
     {% if tests %}
-        <table style="width:100%; border-collapse:collapse;">
+        <table class="data-table">
             <thead>
                 <tr style="text-align:left;">
                     <th style="padding:8px 6px;">Тест</th>
@@ -22,7 +22,7 @@
             </thead>
             <tbody>
                 {% for test in tests %}
-                    <tr style="border-top:1px solid rgba(255,255,255,0.12);">
+                    <tr>
                         <td style="padding:8px 6px;">{{ test.title }}</td>
                         <td style="padding:8px 6px;">{{ test.course.title }}</td>
                         <td style="padding:8px 6px;">{{ test.due_date|date:"d.m.Y"|default:"—" }}</td>
@@ -53,7 +53,7 @@
 <div class="card">
     <h2>Черновики заданий</h2>
     {% if tasks %}
-        <table style="width:100%; border-collapse:collapse;">
+        <table class="data-table">
             <thead>
                 <tr style="text-align:left;">
                     <th style="padding:8px 6px;">Задание</th>
@@ -64,7 +64,7 @@
             </thead>
             <tbody>
                 {% for task in tasks %}
-                    <tr style="border-top:1px solid rgba(255,255,255,0.12);">
+                    <tr>
                         <td style="padding:8px 6px;">{{ task.title }}</td>
                         <td style="padding:8px 6px;">
                             {% if task.course %}{{ task.course.title }}{% else %}—{% endif %}

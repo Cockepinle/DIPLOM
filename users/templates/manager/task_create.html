@@ -42,12 +42,6 @@
             <label for="{{ form.attachment.id_for_label }}">Файл задания (PDF/Word и др.)</label>
             {{ form.attachment }}
             {{ form.attachment.errors }}
-            {% if is_edit and task.attachment %}
-                <div class="small" style="margin-top:8px;">
-                    Текущий файл:
-                    <a href="{{ task.attachment.url }}" target="_blank" rel="noopener">Открыть</a>
-                </div>
-            {% endif %}
         </div>
         <div style="margin-top:14px;">
             <label for="{{ form.criteria.id_for_label }}">Критерии оценки</label>

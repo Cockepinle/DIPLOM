@@ -25,36 +25,38 @@
 <div class="card">
     <h2>Список уроков</h2>
     {% if lessons %}
-        <table style="width:100%; border-collapse:collapse;">
-            <thead>
-                <tr style="text-align:left;">
-                    <th style="padding:8px 6px;">Урок</th>
-                    <th style="padding:8px 6px;">Курс</th>
-                    <th style="padding:8px 6px;">Тест</th>
-                    <th style="padding:8px 6px;">Статус</th>
-                    <th style="padding:8px 6px;"></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for lesson in lessons %}
-                    <tr style="border-top:1px solid rgba(255,255,255,0.12);">
-                        <td style="padding:8px 6px;">{{ lesson.title }}</td>
-                        <td style="padding:8px 6px;">{{ lesson.course.title }}</td>
-                        <td style="padding:8px 6px;">{% if lesson.has_test %}Есть{% else %}—{% endif %}</td>
-                        <td style="padding:8px 6px;">{{ lesson.is_published|yesno:"Опубликован,Черновик" }}</td>
-                        <td style="padding:8px 6px;">
-                            <div class="actions" style="gap:6px; flex-wrap:wrap;">
-                                <a class="btn secondary" href="{% url 'manager_lesson_edit' lesson.id %}">Изменить</a>
-                                <form method="post" action="{% url 'manager_lesson_delete' lesson.id %}">
-                                    {% csrf_token %}
-                                    <button type="submit">Удалить</button>
-                                </form>
-                            </div>
-                        </td>
+        <div class="table-scroll">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th class="wrap">Урок</th>
+                        <th class="wrap">Курс</th>
+                        <th class="nowrap">Тест</th>
+                        <th class="nowrap">Статус</th>
+                        <th class="actions-col"></th>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {% for lesson in lessons %}
+                        <tr>
+                            <td class="wrap">{{ lesson.title }}</td>
+                            <td class="wrap">{{ lesson.course.title }}</td>
+                            <td class="nowrap">{% if lesson.has_test %}Есть{% else %}—{% endif %}</td>
+                            <td class="nowrap">{{ lesson.is_published|yesno:"Опубликован,Черновик" }}</td>
+                            <td class="actions-col">
+                                <div class="actions" style="gap:6px; flex-wrap:wrap; justify-content:flex-end; margin-top:0;">
+                                    <a class="btn secondary" href="{% url 'manager_lesson_edit' lesson.id %}">Изменить</a>
+                                    <form method="post" action="{% url 'manager_lesson_delete' lesson.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit">Удалить</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     {% else %}
         <div class="small">Уроков пока нет.</div>
     {% endif %}

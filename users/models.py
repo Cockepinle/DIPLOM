@@ -82,6 +82,40 @@ class User(AbstractUser):
         verbose_name='Фото'
     )
 
+    class RegistrationStatus(models.TextChoices):
+        PENDING = 'PENDING', 'Ожидает подтверждения'
+        APPROVED = 'APPROVED', 'Подтверждён'
+        REJECTED = 'REJECTED', 'Отклонён'
+
+    registration_status = models.CharField(
+        max_length=20,
+        choices=RegistrationStatus.choices,
+        default=RegistrationStatus.APPROVED,
+        verbose_name='Статус регистрации',
+    )
+    registration_requested_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Дата заявки',
+    )
+    registration_reviewed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Дата решения',
+    )
+    registration_reviewed_by = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='registration_reviews',
+        verbose_name='Решение принял',
+    )
+    registration_review_comment = models.TextField(
+        blank=True,
+        verbose_name='Комментарий к решению',
+    )
+
     class Meta(AbstractUser.Meta):
         constraints = [
             models.CheckConstraint(

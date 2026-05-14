@@ -51,22 +51,22 @@ class TestSerializer(serializers.ModelSerializer):
 
     def validate_passing_score(self, value):
         if value < 0 or value > 100:
-            raise serializers.ValidationError('Passing score must be between 0 and 100.')
+            raise serializers.ValidationError('Проходной балл должен быть от 0 до 100.')
         return value
 
     def validate_attempts(self, value):
         if value < 1:
-            raise serializers.ValidationError('Attempts must be at least 1.')
+            raise serializers.ValidationError('Количество попыток должно быть не меньше 1.')
         return value
 
     def validate_warning_threshold(self, value):
         if value < 0 or value > 100:
-            raise serializers.ValidationError('Warning threshold must be between 0 and 100.')
+            raise serializers.ValidationError('Порог предупреждения должен быть от 0 до 100.')
         return value
 
     def validate_success_threshold(self, value):
         if value < 0 or value > 100:
-            raise serializers.ValidationError('Success threshold must be between 0 and 100.')
+            raise serializers.ValidationError('Порог успеха должен быть от 0 до 100.')
         return value
 
     def validate(self, attrs):
@@ -75,7 +75,7 @@ class TestSerializer(serializers.ModelSerializer):
         success = attrs.get('success_threshold', getattr(self.instance, 'success_threshold', None))
         if warning is not None and success is not None and warning >= success:
             raise serializers.ValidationError(
-                {'success_threshold': 'Success threshold must be greater than warning threshold.'}
+                {'success_threshold': 'Порог успеха должен быть больше порога предупреждения.'}
             )
         return attrs
 
@@ -84,7 +84,7 @@ class TestSerializer(serializers.ModelSerializer):
     examples=[
         OpenApiExample(
             'Answer',
-            value={'id': 1, 'question': 1, 'text': 'A programming language', 'is_correct': True},
+            value={'id': 1, 'question': 1, 'text': 'Язык программирования', 'is_correct': True},
             response_only=True,
         )
     ]

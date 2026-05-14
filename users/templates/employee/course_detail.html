@@ -10,46 +10,18 @@
         flex-wrap: wrap;
         align-items: center;
     }
-    .course-meta .small {
-        background: rgba(0, 0, 0, 0.35);
-        padding: 6px 10px;
-        border-radius: 999px;
-    }
-    .data-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0 10px;
-    }
-    .data-table thead th {
-        text-align: left;
-        padding: 4px 10px;
-        font-size: 12px;
-        letter-spacing: 0.02em;
-        opacity: 0.8;
-    }
-    .data-table tbody tr {
-        background: rgba(255, 255, 255, 0.06);
-        box-shadow: 0 6px 16px rgba(8, 12, 30, 0.18);
-    }
-    .data-table tbody td {
-        padding: 12px 12px;
-        vertical-align: middle;
-    }
-    .data-table tbody td:first-child {
-        border-top-left-radius: 12px;
-        border-bottom-left-radius: 12px;
-    }
-    .data-table tbody td:last-child {
-        border-top-right-radius: 12px;
-        border-bottom-right-radius: 12px;
-    }
-    .data-table .meta-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
+	    .course-meta .small {
+	        background: rgba(0, 0, 0, 0.35);
+	        padding: 6px 10px;
+	        border-radius: 999px;
+	    }
+	    .data-table .meta-pill {
+	        display: inline-flex;
+	        align-items: center;
+	        gap: 6px;
         padding: 4px 10px;
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.12);
+        background: var(--chip-bg);
         font-size: 12px;
     }
     .data-table .module-link {
@@ -72,6 +44,33 @@
         margin-left: 6px;
         font-size: 12px;
         opacity: 0.85;
+    }
+    .data-table td.actions-col {
+        white-space: nowrap;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        min-width: 220px;
+    }
+    .data-table td.actions-col .btn,
+    .data-table td.actions-col .btn.secondary,
+    .data-table td.actions-col button {
+        white-space: nowrap !important;
+        min-width: 90px;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 11px !important;
+    }
+    .data-table td.actions-col form {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        min-width: 180px;
     }
 </style>
 {% endblock %}
@@ -190,7 +189,7 @@
                     <th>Срок</th>
                     <th>Статус</th>
                     <th>Попытки</th>
-                    <th></th>
+                    <th class="actions-col"></th>
                 </tr>
             </thead>
             <tbody>
@@ -212,7 +211,7 @@
                         <td>
                             Попытки: {{ item.attempts_used }}/{{ item.attempts_total }}
                         </td>
-                        <td>
+                        <td class="actions-col">
                             <a class="btn secondary" href="{% url 'employee_test_take' item.test.id %}">Пройти</a>
                         </td>
                     </tr>
@@ -236,7 +235,7 @@
                 <th>Срок</th>
                 <th>Статус</th>
                 <th>Попытки</th>
-                <th></th>
+                <th class="actions-col"></th>
             </tr>
         </thead>
         <tbody>
@@ -256,14 +255,11 @@
                     <td>
                         Попытки: {{ item.attempts_used }}/{{ item.attempts_total }}
                     </td>
-                    <td>
+                    <td class="actions-col">
                         {% if item.needs_retake_decision %}
-                            <form method="post" action="{% url 'employee_test_accept' item.test.id %}" style="display:inline;">
+                            <form method="post" action="{% url 'employee_test_accept' item.test.id %}" style="display:inline-flex; gap:8px; flex-wrap:wrap; align-items:center;">
                                 {% csrf_token %}
                                 <button type="submit" class="btn secondary">Принять</button>
-                            </form>
-                            <form method="post" action="{% url 'employee_test_decline' item.test.id %}" style="display:inline;">
-                                {% csrf_token %}
                                 <button type="submit" class="btn secondary">Отказаться</button>
                             </form>
                         {% else %}
@@ -293,7 +289,7 @@
                     <th>Срок</th>
                     <th>Статус</th>
                     <th>Попытки</th>
-                    <th></th>
+                    <th class="actions-col"></th>
                 </tr>
             </thead>
             <tbody>
@@ -328,7 +324,7 @@
                         <td>
                             Попытки: {{ item.attempts_used }}/{{ item.attempts_total }}
                         </td>
-                        <td>
+                        <td class="actions-col">
                             <a class="btn secondary" href="{% url 'employee_test_result' item.result.id %}">Результат</a>
                             {% if item.can_attempt %}
                                 <a class="btn secondary" href="{% url 'employee_test_take' item.test.id %}">{{ item.button_label }}</a>

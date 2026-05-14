@@ -54,7 +54,7 @@ class TestResultSerializer(serializers.ModelSerializer):
                 attrs['status'] = status
             elif score is not None:
                 raise serializers.ValidationError(
-                    {'status': 'Status is required when score is provided.'}
+                    {'status': 'Статус обязателен, если указан балл.'}
                 )
 
         if status in [TestResult.Status.UNDER_REVIEW, TestResult.Status.RETURNED, TestResult.Status.DECLINED]:
@@ -64,21 +64,21 @@ class TestResultSerializer(serializers.ModelSerializer):
 
         if status in [TestResult.Status.PASSED, TestResult.Status.FAILED]:
             if score is None:
-                raise serializers.ValidationError({'score': 'Score is required for reviewed results.'})
+                raise serializers.ValidationError({'score': 'Для проверенного результата нужно указать балл.'})
             expected_passed = status == TestResult.Status.PASSED
             if passed is None:
                 attrs['passed'] = expected_passed
             elif passed != expected_passed:
-                raise serializers.ValidationError({'passed': 'Passed must match the status.'})
+                raise serializers.ValidationError({'passed': 'Поле \"Сдан\" должно соответствовать статусу.'})
         return attrs
 
     def validate_score(self, value):
         if value is None:
             return value
         if value < 0:
-            raise serializers.ValidationError('Score must be zero or more.')
+            raise serializers.ValidationError('Балл должен быть не меньше 0.')
         if value > 100:
-            raise serializers.ValidationError('Score cannot exceed 100.')
+            raise serializers.ValidationError('Балл не может быть больше 100.')
         return value
 
     def get_score_color(self, obj):

@@ -1,5 +1,6 @@
 from django import forms
 from django.forms import inlineformset_factory
+import os
 
 from .models import Test, Question, Answer, MatchingPair, OrderingItem
 
@@ -40,6 +41,24 @@ class QuestionForm(forms.ModelForm):
     class Meta:
         model = Question
         fields = ('type', 'text', 'points', 'image')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        field = self.fields.get('image')
+        if not field:
+            return
+        field.widget.attrs.setdefault('data-preview', 'auto')
+        image = getattr(self.instance, 'image', None)
+        if image and getattr(image, 'url', None):
+            field.widget.attrs['data-current-url'] = image.url
+            field.widget.attrs['data-current-name'] = os.path.basename(getattr(image, 'name', '') or '') or 'Файл'
+            is_img = False
+            if hasattr(self.instance, 'is_image'):
+                try:
+                    is_img = bool(self.instance.is_image())
+                except Exception:
+                    is_img = False
+            field.widget.attrs['data-current-is-image'] = '1' if is_img else '0'
 
 
 AnswerFormSet = inlineformset_factory(

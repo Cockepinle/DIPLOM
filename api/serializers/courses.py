@@ -98,11 +98,11 @@ class CourseMaterialSerializer(serializers.ModelSerializer):
         url = attrs.get('url', getattr(self.instance, 'url', None))
         file = attrs.get('file', getattr(self.instance, 'file', None))
         if material_type == CourseMaterial.MaterialType.TEXT and not content:
-            raise serializers.ValidationError({'content': 'Content is required for TEXT materials.'})
+            raise serializers.ValidationError({'content': 'Для текстового материала нужно заполнить содержимое.'})
         if material_type == CourseMaterial.MaterialType.LINK and not url:
-            raise serializers.ValidationError({'url': 'URL is required for LINK materials.'})
+            raise serializers.ValidationError({'url': 'Для материала-ссылки нужно указать URL.'})
         if material_type == CourseMaterial.MaterialType.FILE and not file:
-            raise serializers.ValidationError({'file': 'File is required for FILE materials.'})
+            raise serializers.ValidationError({'file': 'Для материала-файла нужно прикрепить файл.'})
         return attrs
 
 
@@ -153,7 +153,7 @@ class EnrollmentSerializer(serializers.ModelSerializer):
 
     def validate_progress(self, value):
         if value < 0 or value > 100:
-            raise serializers.ValidationError('Progress must be between 0 and 100.')
+            raise serializers.ValidationError('Прогресс должен быть от 0 до 100.')
         return value
 
 
@@ -201,7 +201,7 @@ class TaskSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         course = attrs.get('course', getattr(self.instance, 'course', None))
         if not course:
-            raise serializers.ValidationError({'course': 'Course is required.'})
+            raise serializers.ValidationError({'course': 'Выберите курс.'})
         return attrs
 
 
@@ -273,5 +273,5 @@ class TaskSubmissionSerializer(serializers.ModelSerializer):
         if value is None:
             return value
         if value < 0 or value > 100:
-            raise serializers.ValidationError('Score must be between 0 and 100.')
+            raise serializers.ValidationError('Балл должен быть от 0 до 100.')
         return value

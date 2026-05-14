@@ -5,30 +5,30 @@
 {% block extra_styles %}
 <style>
     :root {
-        --test-surface: rgba(255, 255, 255, 0.08);
-        --test-surface-strong: rgba(255, 255, 255, 0.12);
-        --test-border: rgba(255, 255, 255, 0.2);
+        --test-surface: var(--card-bg);
+        --test-surface-strong: var(--input-bg);
+        --test-border: var(--card-border);
         --test-muted: var(--muted);
-        --test-accent: #ffb703;
-        --test-accent-text: #1b1b1b;
+        --test-accent: var(--accent);
+        --test-accent-text: #15171c;
         --test-option-bg: rgba(255, 255, 255, 0.02);
         --test-option-hover: rgba(255, 255, 255, 0.1);
-        --test-option-active-bg: rgba(255, 183, 3, 0.16);
-        --test-option-active-border: rgba(255, 183, 3, 0.35);
-        --test-option-text: #f7f4ff;
+        --test-option-active-bg: rgba(157, 255, 43, 0.18);
+        --test-option-active-border: rgba(255, 255, 255, 0.12);
+        --test-option-text: var(--text);
     }
     :root[data-theme="light"] {
-        --test-surface: #ffffff;
-        --test-surface-strong: #f3f3f6;
-        --test-border: rgba(0, 0, 0, 0.12);
+        --test-surface: var(--card-bg);
+        --test-surface-strong: var(--input-bg);
+        --test-border: var(--card-border);
         --test-muted: var(--muted);
-        --test-accent: #111;
-        --test-accent-text: #fff;
-        --test-option-bg: #f5f5f8;
-        --test-option-hover: #e9e9ef;
-        --test-option-active-bg: rgba(0, 0, 0, 0.08);
-        --test-option-active-border: rgba(0, 0, 0, 0.2);
-        --test-option-text: #111;
+        --test-accent: #9dff2b;
+        --test-accent-text: #15171c;
+        --test-option-bg: rgba(255, 255, 255, 0.58);
+        --test-option-hover: rgba(255, 255, 255, 0.72);
+        --test-option-active-bg: rgba(157, 255, 43, 0.18);
+        --test-option-active-border: rgba(21, 23, 28, 0.10);
+        --test-option-text: #15171c;
     }
     body {
         background: var(--bg);

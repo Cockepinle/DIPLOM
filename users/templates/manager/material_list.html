@@ -25,7 +25,7 @@
 <div class="card">
     <h2>Список материалов</h2>
     {% if materials %}
-        <table style="width:100%; border-collapse:collapse;">
+        <table class="data-table">
             <thead>
                 <tr style="text-align:left;">
                     <th style="padding:8px 6px;">Материал</th>
@@ -39,7 +39,7 @@
             </thead>
             <tbody>
                 {% for material in materials %}
-                    <tr style="border-top:1px solid rgba(255,255,255,0.12);">
+                    <tr>
                         <td style="padding:8px 6px;">{{ material.title }}</td>
                         <td style="padding:8px 6px;">{{ material.course.title }}</td>
                         <td style="padding:8px 6px;">{{ material.test.title|default:"—" }}</td>

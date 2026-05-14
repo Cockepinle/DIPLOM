@@ -12,7 +12,7 @@ from feedback.models import Feedback, TaskReview
                 'id': 1,
                 'manager': 2,
                 'test_result': 1,
-                'comment': 'Well done',
+                'comment': 'Отличная работа',
                 'rating': 5,
                 'created_at': '2026-02-05T10:00:00Z',
             },
@@ -30,7 +30,7 @@ class FeedbackSerializer(serializers.ModelSerializer):
         if value is None:
             return value
         if value < 1 or value > 5:
-            raise serializers.ValidationError('Rating must be between 1 and 5.')
+            raise serializers.ValidationError('Оценка должна быть от 1 до 5.')
         return value
 
 
@@ -42,7 +42,7 @@ class FeedbackSerializer(serializers.ModelSerializer):
                 'id': 1,
                 'manager': 2,
                 'task_submission': 1,
-                'comment': 'Please improve',
+                'comment': 'Нужно доработать',
                 'rating': 4,
                 'created_at': '2026-02-05T10:00:00Z',
             },
@@ -60,5 +60,5 @@ class TaskReviewSerializer(serializers.ModelSerializer):
         if value is None:
             return value
         if value < 1 or value > 5:
-            raise serializers.ValidationError('Rating must be between 1 and 5.')
+            raise serializers.ValidationError('Оценка должна быть от 1 до 5.')
         return value

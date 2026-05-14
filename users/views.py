@@ -7,10 +7,12 @@ from django.urls import reverse
 from django.db.models import Count, Avg, Q
 from django.db.models.functions import TruncMonth
 from django.utils.dateparse import parse_date
+from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from .forms import UserRegisterForm, UserProfileForm, ManagerStudentForm
 from .decorators import role_required
 from django.contrib.auth import login
+import os
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from django.contrib.auth import get_user_model
@@ -146,9 +148,24 @@ def _build_analytics_data(filters):
         'tasks_submitted': submissions.count(),
         'tasks_approved': submissions.filter(status=TaskSubmission.Status.APPROVED).count(),
     }
+    summary['completion_rate'] = (
+        round(summary['courses_completed'] / summary['courses_assigned'] * 100, 1)
+        if summary['courses_assigned']
+        else 0
+    )
     passed_count = test_results.filter(passed=True).count()
     if summary['tests_taken']:
         summary['pass_rate'] = round(passed_count / summary['tests_taken'] * 100, 1)
+    summary['task_approval_rate'] = (
+        round(summary['tasks_approved'] / summary['tasks_submitted'] * 100, 1)
+        if summary['tasks_submitted']
+        else 0
+    )
+    summary['overdue_rate'] = (
+        round(summary['courses_overdue'] / summary['courses_assigned'] * 100, 1)
+        if summary['courses_assigned']
+        else 0
+    )
 
     enrollment_by_user = {
         row['user_id']: row
@@ -175,6 +192,9 @@ def _build_analytics_data(filters):
             approved=Count('id', filter=Q(status=TaskSubmission.Status.APPROVED)),
         )
     }
+    summary['active_learners'] = sum(
+        1 for row in enrollment_by_user.values() if (row.get('assigned') or 0) > 0
+    )
 
     employee_rows = []
     for user in users_qs.select_related('position', 'specialty').order_by('last_name', 'first_name'):
@@ -277,7 +297,16 @@ def _build_analytics_data(filters):
             'tests_taken': row['tests_taken'],
         }
         for row in department_rows
-    ]
+      ]
+    status_series = [
+          {'label': 'Завершены', 'value': summary['courses_completed']},
+          {'label': 'В процессе', 'value': summary['courses_in_progress']},
+          {'label': 'Просрочены', 'value': summary['courses_overdue']},
+      ]
+    tasks_series = [
+          {'label': 'Отправлены', 'value': summary['tasks_submitted']},
+          {'label': 'Приняты', 'value': summary['tasks_approved']},
+      ]
 
     competencies_rows = list(
         UserCompetency.objects.filter(user__in=users_qs)
@@ -301,7 +330,9 @@ def _build_analytics_data(filters):
         'department_rows': department_rows,
         'monthly_stats': monthly_stats,
         'monthly_series': monthly_series,
-        'dept_series': dept_series,
+          'dept_series': dept_series,
+          'status_series': status_series,
+          'tasks_series': tasks_series,
         'competencies_rows': competencies_rows,
         'recent_tests': recent_tests,
         'recent_tasks': recent_tasks,
@@ -414,7 +445,17 @@ def profile_view(request):
     if request.method == 'POST':
         form = UserProfileForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
-            form.save()
+            user = form.save(commit=False)
+            remove_avatar = bool(form.cleaned_data.get('remove_avatar'))
+            has_new_avatar = 'avatar' in request.FILES
+            if remove_avatar and not has_new_avatar:
+                try:
+                    if user.avatar:
+                        user.avatar.delete(save=False)
+                except Exception:
+                    pass
+                user.avatar = None
+            user.save()
             saved = True
     else:
         form = UserProfileForm(instance=request.user)
@@ -439,6 +480,76 @@ def admin_panel_view(request):
         {
             'access_token': str(access),
             'refresh_token': str(refresh),
+            'admin_user_id': user.id,
+            'admin_email': user.email,
+        },
+    )
+
+
+@login_required
+def registration_requests_view(request):
+    user = request.user
+    if not (getattr(user, 'is_superuser', False) or user.role == 'ADMIN'):
+        raise PermissionDenied
+
+    status_filter = (request.GET.get('status') or 'PENDING').strip().upper()
+    allowed = {'PENDING', 'APPROVED', 'REJECTED', 'ALL'}
+    if status_filter not in allowed:
+        status_filter = 'PENDING'
+
+    qs = User.objects.filter(is_superuser=False, role='EMPLOYEE').order_by('-date_joined', '-id')
+    if status_filter != 'ALL':
+        qs = qs.filter(registration_status=status_filter)
+
+    if request.method == 'POST':
+        action = (request.POST.get('action') or '').strip().lower()
+        user_id = (request.POST.get('user_id') or '').strip()
+        comment = (request.POST.get('comment') or '').strip()
+
+        if action in {'approve', 'reject'} and user_id.isdigit():
+            target = (
+                User.objects.filter(is_superuser=False, role='EMPLOYEE', id=int(user_id))
+                .first()
+            )
+            if target:
+                now = timezone.now()
+                if action == 'approve':
+                    target.is_active = True
+                    target.registration_status = User.RegistrationStatus.APPROVED
+                else:
+                    target.is_active = False
+                    target.registration_status = User.RegistrationStatus.REJECTED
+                target.registration_reviewed_at = now
+                target.registration_reviewed_by = request.user
+                target.registration_review_comment = comment
+                target.save(
+                    update_fields=[
+                        'is_active',
+                        'registration_status',
+                        'registration_reviewed_at',
+                        'registration_reviewed_by',
+                        'registration_review_comment',
+                    ]
+                )
+        return redirect(reverse('registration_requests') + f'?status={status_filter}')
+
+    counts = (
+        User.objects.filter(is_superuser=False, role='EMPLOYEE')
+        .values('registration_status')
+        .annotate(count=Count('id'))
+    )
+    counts_map = {row['registration_status']: row['count'] for row in counts}
+    return render(
+        request,
+        'users/registration_requests.html',
+        {
+            'requests': list(qs),
+            'status_filter': status_filter,
+            'counts': {
+                'PENDING': counts_map.get('PENDING', 0),
+                'APPROVED': counts_map.get('APPROVED', 0),
+                'REJECTED': counts_map.get('REJECTED', 0),
+            },
         },
     )
 
@@ -551,7 +662,185 @@ def employee_dashboard(request):
         .select_related('course', 'course__specialty', 'course__created_by')
         .order_by('-assigned_at')
     )
-    return render(request, 'employee/dashboard.html', {'enrollments': enrollments})
+    today = timezone.localdate()
+    enrollments_view = []
+    overdue_count = 0
+    due_soon_count = 0
+    for enrollment in enrollments:
+        due_date = enrollment.due_date
+        days_left = None
+        due_status = 'none'
+        due_text = '—'
+        if due_date:
+            days_left = (due_date - today).days
+            if days_left < 0:
+                due_status = 'overdue'
+                overdue_count += 1
+                due_text = f"Просрочено на {abs(days_left)} дн. ({due_date:%d.%m.%Y})"
+            elif days_left <= 3:
+                due_status = 'soon'
+                due_soon_count += 1
+                due_text = f"Срок {due_date:%d.%m.%Y} (через {days_left} дн.)"
+            else:
+                due_status = 'ok'
+                due_text = due_date.strftime('%d.%m.%Y')
+        enrollments_view.append(
+            {
+                'enrollment': enrollment,
+                'due_status': due_status,
+                'due_text': due_text,
+                'days_left': days_left,
+            }
+        )
+
+    return render(
+        request,
+        'employee/dashboard.html',
+        {
+            'enrollments': enrollments,
+            'enrollments_view': enrollments_view,
+            'overdue_count': overdue_count,
+            'due_soon_count': due_soon_count,
+        },
+    )
+
+
+def _build_user_progress_context(target_user):
+    today = timezone.localdate()
+    enrollments = (
+        Enrollment.objects.filter(user=target_user)
+        .select_related('course', 'course__specialty')
+        .order_by('-assigned_at', '-id')
+    )
+    courses_progress = []
+    overdue_items = []
+    due_soon_items = []
+    for enrollment in enrollments:
+        courses_progress.append(
+            {
+                'course_id': enrollment.course_id,
+                'course_title': enrollment.course.title,
+                'progress': float(enrollment.progress or 0),
+                'status': enrollment.status,
+                'completed': bool(enrollment.completed),
+            }
+        )
+        if enrollment.due_date:
+            days_left = (enrollment.due_date - today).days
+            item = {
+                'title': enrollment.course.title,
+                'due_date': enrollment.due_date,
+                'days_left': days_left,
+                'days_overdue': abs(days_left) if days_left < 0 else 0,
+            }
+            if days_left < 0 and not enrollment.completed:
+                overdue_items.append(item)
+            elif 0 <= days_left <= 3 and not enrollment.completed:
+                due_soon_items.append(item)
+
+    test_monthly_rows = list(
+        TestResult.objects.filter(user=target_user)
+        .exclude(status=TestResult.Status.UNDER_REVIEW)
+        .annotate(month=TruncMonth('completed_at'))
+        .values('month')
+        .annotate(count=Count('id'), avg_score=Avg('score'))
+        .order_by('month')
+    )
+    test_monthly_series = [
+        {
+            'month': row['month'].strftime('%Y-%m'),
+            'count': int(row['count'] or 0),
+            'avg_score': float(row['avg_score']) if row['avg_score'] is not None else None,
+        }
+        for row in test_monthly_rows
+        if row.get('month') is not None
+    ]
+
+    task_monthly_rows = list(
+        TaskSubmission.objects.filter(assignment__user=target_user)
+        .annotate(month=TruncMonth('submitted_at'))
+        .values('month')
+        .annotate(count=Count('id'))
+        .order_by('month')
+    )
+    task_monthly_series = [
+        {
+            'month': row['month'].strftime('%Y-%m'),
+            'count': int(row['count'] or 0),
+        }
+        for row in task_monthly_rows
+        if row.get('month') is not None
+    ]
+
+    competency_rows = [
+        {
+            'name': item.competency.name,
+            'level': int(item.level),
+            'source': item.source,
+            'updated_at': item.updated_at,
+        }
+        for item in UserCompetency.objects.filter(user=target_user).select_related('competency').order_by(
+            '-updated_at',
+            'competency__name',
+        )
+    ]
+
+    enrollments_summary = enrollments.aggregate(
+        assigned=Count('id'),
+        completed=Count('id', filter=Q(completed=True)),
+        overdue=Count('id', filter=Q(status=Enrollment.Status.OVERDUE)),
+        in_progress=Count('id', filter=Q(status=Enrollment.Status.IN_PROGRESS)),
+        progress_avg=Avg('progress'),
+    )
+    tests_summary = (
+        TestResult.objects.filter(user=target_user)
+        .exclude(score__isnull=True)
+        .aggregate(
+            avg_score=Avg('score'),
+            tests_taken=Count('id'),
+            tests_passed=Count('id', filter=Q(status=TestResult.Status.PASSED)),
+        )
+    )
+
+    return {
+        'target_user': target_user,
+        'summary': {
+            'assigned_courses': enrollments_summary.get('assigned') or 0,
+            'completed_courses': enrollments_summary.get('completed') or 0,
+            'courses_in_progress': enrollments_summary.get('in_progress') or 0,
+            'courses_overdue': enrollments_summary.get('overdue') or 0,
+            'progress_avg': (
+                float(enrollments_summary['progress_avg'])
+                if enrollments_summary.get('progress_avg') is not None
+                else None
+            ),
+            'tests_taken': tests_summary.get('tests_taken') or 0,
+            'tests_passed': tests_summary.get('tests_passed') or 0,
+            'avg_score': float(tests_summary['avg_score']) if tests_summary.get('avg_score') is not None else None,
+        },
+        'courses_progress': courses_progress,
+        'test_monthly_series': test_monthly_series,
+        'task_monthly_series': task_monthly_series,
+        'competency_rows': competency_rows,
+        'overdue_items': sorted(overdue_items, key=lambda x: x['days_left']),
+        'due_soon_items': sorted(due_soon_items, key=lambda x: x['days_left']),
+    }
+
+
+@login_required
+@role_required(['EMPLOYEE'])
+def employee_progress(request):
+    context = _build_user_progress_context(request.user)
+    return render(request, 'users/progress.html', context)
+
+
+@login_required
+@role_required(['MANAGER', 'ANALYST', 'ADMIN'])
+def manager_student_progress(request, student_id):
+    student = get_object_or_404(User, id=student_id, role='EMPLOYEE')
+    context = _build_user_progress_context(student)
+    context['view_as'] = 'manager'
+    return render(request, 'users/progress.html', context)
 
 
 @login_required
@@ -1933,6 +2222,30 @@ def manager_material_create(request):
         form.fields['test'].initial = test_id
 
     if request.method == 'POST' and form.is_valid():
+        files = form.cleaned_data.get('files') or []
+        if files:
+            metadata = {
+                'course': form.cleaned_data['course'],
+                'test': form.cleaned_data['test'],
+                'title': form.cleaned_data['title'],
+                'material_type': form.cleaned_data['material_type'],
+                'content': form.cleaned_data['content'],
+                'url': form.cleaned_data['url'],
+                'accent_color': form.cleaned_data['accent_color'],
+                'order': form.cleaned_data['order'],
+                'is_required': form.cleaned_data['is_required'],
+            }
+            created_materials = []
+            for uploaded_file in files:
+                CourseMaterial.objects.create(
+                    **{
+                        **metadata,
+                        'title': metadata['title'] or os.path.basename(uploaded_file.name),
+                        'file': uploaded_file,
+                        'image': None,
+                    }
+                )
+            return redirect('manager_course_detail', course_id=metadata['course'].id)
         material = form.save()
         return redirect('manager_course_detail', course_id=material.course_id)
 
@@ -2014,16 +2327,19 @@ def manager_student_detail(request, student_id):
         id=student_id,
         role='EMPLOYEE',
     )
-    form = ManagerStudentForm(request.POST or None, instance=student)
-    if request.method == 'POST' and form.is_valid():
-        form.save()
-        return redirect('manager_student_detail', student_id=student.id)
+    if request.method == 'POST':
+        raise PermissionDenied
+
+    form = ManagerStudentForm(instance=student)
+    for field in form.fields.values():
+        field.disabled = True
     return render(
         request,
         'manager/student_detail.html',
         {
             'student': student,
             'form': form,
+            'read_only': True,
         },
     )
 
@@ -2608,13 +2924,25 @@ def manager_task_assign(request, task_id):
     if task.course_id and task.course.specialty_id:
         users_qs = users_qs.filter(specialty=task.course.specialty)
     users_count = users_qs.count()
+    assigned_user_ids = set(
+        TaskAssignment.objects.filter(task=task).values_list('user_id', flat=True)
+    )
 
     if request.method == 'POST':
+        revoke_user_id = (request.POST.get('revoke_user') or '').strip()
+        if revoke_user_id.isdigit():
+            TaskAssignment.objects.filter(task=task, user_id=int(revoke_user_id)).delete()
+            return redirect('manager_task_assign', task_id=task.id)
         form = TaskAssignForm(request.POST, users_qs=users_qs)
         if form.is_valid():
             due_date = form.cleaned_data.get('due_date') or task.due_date
             priority = form.cleaned_data.get('priority')
-            for user in form.cleaned_data['users']:
+            users = (
+                list(users_qs)
+                if form.cleaned_data.get('assign_all')
+                else form.cleaned_data.get('users')
+            )
+            for user in users:
                 TaskAssignment.objects.get_or_create(
                     task=task,
                     user=user,
@@ -2632,7 +2960,13 @@ def manager_task_assign(request, task_id):
     return render(
         request,
         'manager/task_assign.html',
-        {'form': form, 'task': task, 'users_count': users_count},
+        {
+            'form': form,
+            'task': task,
+            'users_count': users_count,
+            'users': list(users_qs),
+            'assigned_user_ids': assigned_user_ids,
+        },
     )
 
 
@@ -2681,9 +3015,11 @@ def analyst_dashboard(request):
             'employee_rows': data['employee_rows'],
             'department_rows': data['department_rows'],
             'monthly_stats': data['monthly_stats'],
-            'monthly_series': data['monthly_series'],
-            'dept_series': data['dept_series'],
-            'competencies_rows': data['competencies_rows'],
+              'monthly_series': data['monthly_series'],
+              'dept_series': data['dept_series'],
+              'status_series': data['status_series'],
+              'tasks_series': data['tasks_series'],
+              'competencies_rows': data['competencies_rows'],
             'recent_tests': data['recent_tests'],
             'recent_tasks': data['recent_tasks'],
             'dashboards': dashboards,
@@ -2703,9 +3039,10 @@ def analyst_export(request, export_format):
     filters = _analytics_filters_from_request(request)
     data = _build_analytics_data(filters)
 
-    if export_format in {'xlsx', 'csv'}:
-        output = io.StringIO()
-        writer = csv.writer(output)
+    if export_format == 'csv':
+        output = io.StringIO(newline='')
+        # Excel in RU locales typically expects ';' as delimiter and UTF‑8 BOM.
+        writer = csv.writer(output, delimiter=';')
         summary = data['summary']
         writer.writerow(['Сводка'])
         writer.writerow(['Сотрудники', summary['employees']])
@@ -2784,8 +3121,129 @@ def analyst_export(request, export_format):
                 row['tasks_approved'],
             ])
 
-        response = HttpResponse(output.getvalue(), content_type='text/csv; charset=utf-8')
+        payload = output.getvalue().encode('utf-8-sig')
+        response = HttpResponse(payload, content_type='text/csv; charset=utf-8')
         response['Content-Disposition'] = 'attachment; filename="analytics-report.csv"'
+        return response
+
+    if export_format == 'xlsx':
+        try:
+            from openpyxl import Workbook
+            from openpyxl.styles import Alignment, Font
+        except ImportError:
+            return HttpResponse('XLSX экспорт недоступен. Установите openpyxl.', status=500)
+
+        wb = Workbook()
+        ws_summary = wb.active
+        ws_summary.title = 'Сводка'
+
+        bold = Font(bold=True)
+        wrap = Alignment(wrap_text=True, vertical='top')
+
+        summary = data['summary']
+        summary_rows = [
+            ('Сотрудники', summary['employees']),
+            ('Курсы назначены', summary['courses_assigned']),
+            ('Курсы завершены', summary['courses_completed']),
+            ('Курсы в процессе', summary['courses_in_progress']),
+            ('Курсы просрочены', summary['courses_overdue']),
+            ('Тесты пройдены', summary['tests_taken']),
+            ('Средний балл', float(summary['avg_score'] or 0)),
+            ('Процент прохождения', f"{summary['pass_rate']}%"),
+            ('Задания отправлено', summary['tasks_submitted']),
+            ('Задания приняты', summary['tasks_approved']),
+        ]
+        ws_summary.append(['Показатель', 'Значение'])
+        ws_summary['A1'].font = bold
+        ws_summary['B1'].font = bold
+        for k, v in summary_rows:
+            ws_summary.append([k, v])
+        ws_summary.column_dimensions['A'].width = 28
+        ws_summary.column_dimensions['B'].width = 18
+
+        ws_emp = wb.create_sheet('Сотрудники')
+        ws_emp.append([
+            'Сотрудник',
+            'Отдел',
+            'Специальность',
+            'Должность',
+            'Курсы назначены',
+            'Курсы завершены',
+            'Курсы в процессе',
+            'Курсы просрочены',
+            'Средний прогресс',
+            'Тесты пройдены',
+            'Средний балл',
+            'Процент прохождения',
+            'Задания отправлено',
+            'Задания приняты',
+        ])
+        for cell in ws_emp[1]:
+            cell.font = bold
+            cell.alignment = wrap
+        for row in data['employee_rows']:
+            user = row['user']
+            ws_emp.append([
+                f'{user.last_name} {user.first_name}'.strip() or user.email,
+                user.department or '—',
+                str(user.specialty or '—'),
+                str(user.position or '—'),
+                row['assigned'],
+                row['completed'],
+                row['in_progress'],
+                row['overdue'],
+                round(row['progress_avg'], 1) if row['progress_avg'] is not None else None,
+                row['tests_taken'],
+                round(row['avg_score'], 1) if row['avg_score'] is not None else None,
+                f"{row['pass_rate']}%",
+                row['tasks_submitted'],
+                row['tasks_approved'],
+            ])
+        ws_emp.freeze_panes = 'A2'
+
+        ws_dept = wb.create_sheet('Подразделения')
+        ws_dept.append([
+            'Подразделение',
+            'Курсы назначены',
+            'Курсы завершены',
+            'Курсы в процессе',
+            'Курсы просрочены',
+            'Средний прогресс',
+            'Тесты пройдены',
+            'Средний балл',
+            'Процент прохождения',
+            'Задания отправлено',
+            'Задания приняты',
+        ])
+        for cell in ws_dept[1]:
+            cell.font = bold
+            cell.alignment = wrap
+        for row in data['department_rows']:
+            ws_dept.append([
+                row['department'] or '—',
+                row['assigned'],
+                row['completed'],
+                row['in_progress'],
+                row['overdue'],
+                round(row['progress_avg'], 1) if row['progress_avg'] is not None else None,
+                row['tests_taken'],
+                round(row['avg_score'], 1) if row['avg_score'] is not None else None,
+                f"{row['pass_rate']}%",
+                row['tasks_submitted'],
+                row['tasks_approved'],
+            ])
+        ws_dept.freeze_panes = 'A2'
+        ws_dept.column_dimensions['A'].width = 28
+
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = 'attachment; filename="analytics-report.xlsx"'
         return response
 
     if export_format == 'pdf':
@@ -2858,6 +3316,8 @@ def analyst_export(request, export_format):
     return HttpResponse('Неверный формат экспорта.', status=400)
 
 def home_view(request):
+    if request.user.is_authenticated:
+        return redirect('/redirect/')
     return render(request, 'users/home.html')
 
 
@@ -2865,12 +3325,18 @@ def register_view(request):
     if request.method == 'POST':
         form = UserRegisterForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.role = 'EMPLOYEE'
-            user.save()
-            login(request, user, backend='users.backends.EmailOrUsernameModelBackend')
-            return redirect('/redirect/')
+            user = form.save()
+            return render(
+                request,
+                'users/register.html',
+                {
+                    'form': UserRegisterForm(),
+                    'submitted': True,
+                    'submitted_email': user.email,
+                },
+            )
     else:
         form = UserRegisterForm()
 
-    return render(request, 'users/register.html', {'form': form})
+    return render(request, 'users/register.html', {'form': form, 'submitted': False})
+

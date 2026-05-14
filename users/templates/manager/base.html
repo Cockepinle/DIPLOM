@@ -10,57 +10,103 @@
         })();
     </script>
     <style>
+        @font-face {
+            font-family: "AppFont";
+            src: url("/static/fonts/DejaVuSans.ttf") format("truetype");
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: "AppFont";
+            src: url("/static/fonts/DejaVuSans-Bold.ttf") format("truetype");
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
         :root {
-            --bg: linear-gradient(135deg, #2b1055, #7597de);
-            --text: #fff;
-            --muted: #e7e7ff;
-            --card-bg: rgba(255, 255, 255, 0.15);
-            --card-border: rgba(255, 255, 255, 0.2);
-            --topbar-bg: rgba(255, 255, 255, 0.12);
-            --topbar-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-            --nav-bg: rgba(255, 255, 255, 0.12);
-            --nav-text: #fff;
-            --nav-active-bg: linear-gradient(135deg, #6a11cb, #2575fc);
-            --nav-active-text: #fff;
-            --btn-bg: linear-gradient(135deg, #6a11cb, #2575fc);
-            --btn-text: #fff;
-            --btn-secondary-bg: rgba(255, 255, 255, 0.18);
-            --btn-secondary-text: #fff;
-            --input-bg: rgba(255, 255, 255, 0.25);
-            --input-text: #fff;
-            --input-border: transparent;
-            --select-option-bg: #1b1f34;
-            --select-option-text: #fff;
-            --danger-bg: rgba(255, 0, 0, 0.2);
-            --danger-text: #ffdede;
-        }
+            --font: "AppFont", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+            --bg:
+                radial-gradient(1200px 720px at 20% 0%, rgba(157, 255, 43, 0.10), transparent 60%),
+                radial-gradient(900px 520px at 92% 18%, rgba(255, 255, 255, 0.06), transparent 62%),
+                linear-gradient(165deg, #07090d, #0b1016 55%, #0a0f14);
+            --text: rgba(241, 245, 255, 0.94);
+            --muted: rgba(215, 222, 240, 0.62);
+            --card-bg: rgba(255, 255, 255, 0.06);
+            --card-border: rgba(255, 255, 255, 0.10);
+            --topbar-bg: rgba(255, 255, 255, 0.06);
+            --topbar-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+            --nav-bg: rgba(255, 255, 255, 0.06);
+            --nav-text: rgba(241, 245, 255, 0.92);
+            --nav-active-bg: linear-gradient(135deg, #c7ff66, #9dff2b);
+            --nav-active-text: #15171c;
+            --btn-bg: linear-gradient(135deg, #c7ff66, #9dff2b);
+            --btn-text: #15171c;
+            --btn-secondary-bg: rgba(255, 255, 255, 0.10);
+            --btn-secondary-text: rgba(241, 245, 255, 0.92);
+            --input-bg: rgba(255, 255, 255, 0.08);
+            --input-text: rgba(241, 245, 255, 0.92);
+            --input-border: rgba(255, 255, 255, 0.12);
+            --select-option-bg: #0b1016;
+            --select-option-text: rgba(241, 245, 255, 0.92);
+            --danger-bg: rgba(255, 59, 59, 0.16);
+            --danger-text: rgba(255, 220, 220, 0.95);
+            --table-row-border: rgba(255, 255, 255, 0.10);
+            --track-bg: rgba(255, 255, 255, 0.10);
+            --chip-bg: rgba(255, 255, 255, 0.08);
+            --shadow-lg:
+                0 22px 70px rgba(0, 0, 0, 0.55),
+                0 1px 0 rgba(255, 255, 255, 0.06) inset;
+	            --accent: #9dff2b;
+	            --accent-2: #c7ff66;
+	            --accent-soft: rgba(157, 255, 43, 0.14);
+	            --table-head: rgba(241, 245, 255, 0.62);
+	            --table-row-bg: rgba(255, 255, 255, 0.06);
+	            --table-row-hover: rgba(255, 255, 255, 0.09);
+	            --table-row-hover-border: rgba(157, 255, 43, 0.22);
+	            --table-row-shadow: drop-shadow(0 14px 30px rgba(0, 0, 0, 0.35));
+	        }
         :root[data-theme="light"] {
-            --bg: #f7f7fb;
-            --text: #111;
-            --muted: #5a5a68;
-            --card-bg: #ffffff;
-            --card-border: rgba(0, 0, 0, 0.12);
-            --topbar-bg: #ffffff;
-            --topbar-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-            --nav-bg: #f1f1f3;
-            --nav-text: #111;
-            --nav-active-bg: #111;
-            --nav-active-text: #fff;
-            --btn-bg: #111;
-            --btn-text: #fff;
-            --btn-secondary-bg: #e6e6eb;
-            --btn-secondary-text: #111;
-            --input-bg: #f3f3f6;
-            --input-text: #111;
-            --input-border: rgba(0, 0, 0, 0.15);
-            --select-option-bg: #fff;
-            --select-option-text: #111;
-            --danger-bg: #ffe3e3;
-            --danger-text: #b11;
-        }
+            --bg:
+                radial-gradient(1200px 720px at 18% 0%, rgba(255, 255, 255, 0.92), transparent 62%),
+                radial-gradient(900px 520px at 92% 18%, rgba(255, 255, 255, 0.75), transparent 60%),
+                linear-gradient(165deg, #f1f2f6, #e9ebf1 55%, #e3e6ee);
+            --text: #15171c;
+            --muted: rgba(34, 39, 49, 0.68);
+            --card-bg: rgba(255, 255, 255, 0.72);
+	            --card-border: rgba(16, 24, 40, 0.16);
+            --topbar-bg: rgba(255, 255, 255, 0.68);
+            --topbar-shadow: 0 18px 60px rgba(16, 24, 40, 0.12);
+            --nav-bg: rgba(255, 255, 255, 0.62);
+            --nav-text: #15171c;
+            --nav-active-bg: linear-gradient(135deg, #c7ff66, #9dff2b);
+            --nav-active-text: #15171c;
+            --btn-bg: linear-gradient(135deg, #c7ff66, #9dff2b);
+            --btn-text: #15171c;
+            --btn-secondary-bg: rgba(255, 255, 255, 0.62);
+            --btn-secondary-text: #15171c;
+            --input-bg: rgba(255, 255, 255, 0.68);
+            --input-text: #15171c;
+            --input-border: rgba(16, 24, 40, 0.10);
+            --select-option-bg: #ffffff;
+            --select-option-text: #15171c;
+            --danger-bg: rgba(255, 59, 59, 0.12);
+            --danger-text: #a61b1b;
+            --table-row-border: rgba(16, 24, 40, 0.10);
+            --track-bg: rgba(16, 24, 40, 0.10);
+            --chip-bg: rgba(255, 255, 255, 0.58);
+	            --shadow-lg:
+	                0 22px 70px rgba(16, 24, 40, 0.12),
+	                0 2px 0 rgba(255, 255, 255, 0.85) inset;
+	            --table-head: rgba(34, 39, 49, 0.62);
+	            --table-row-bg: rgba(255, 255, 255, 0.66);
+	            --table-row-hover: rgba(255, 255, 255, 0.78);
+	            --table-row-hover-border: rgba(16, 24, 40, 0.14);
+	            --table-row-shadow: drop-shadow(0 18px 46px rgba(16, 24, 40, 0.12));
+	        }
         * {
             box-sizing: border-box;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: var(--font);
         }
         body {
             margin: 0;
@@ -109,11 +155,15 @@
         .nav button {
             padding: 8px 12px;
             border-radius: 999px;
-            border: none;
+            border: 1px solid var(--card-border);
             background: var(--nav-bg);
             color: var(--nav-text);
             cursor: pointer;
             font-weight: 600;
+        }
+        .nav button:hover {
+            border-color: var(--nav-active-bg);
+            box-shadow: 0 0 0 3px var(--accent-soft);
         }
         .theme-toggle {
             display: inline-flex;
@@ -131,12 +181,18 @@
             letter-spacing: 0.02em;
             box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
         }
+        :root[data-theme="light"] .theme-toggle {
+            box-shadow: 0 14px 44px rgba(16, 24, 40, 0.10);
+        }
         .theme-toggle .dot {
             width: 12px;
             height: 12px;
             border-radius: 50%;
             background: var(--nav-active-bg);
             box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+        }
+        :root[data-theme="light"] .theme-toggle .dot {
+            box-shadow: 0 0 0 2px rgba(21, 23, 28, 0.08);
         }
         .theme-toggle .label {
             white-space: nowrap;
@@ -150,9 +206,12 @@
             backdrop-filter: blur(16px);
             border-radius: 20px;
             padding: 24px;
-            box-shadow: 0 10px 36px rgba(0, 0, 0, 0.2);
+            box-shadow: var(--shadow-lg);
             margin-bottom: 22px;
             border: 1px solid var(--card-border);
+        }
+        :root[data-theme="light"] .card {
+            backdrop-filter: blur(12px);
         }
         h1, h2 {
             margin: 0 0 16px;
@@ -164,16 +223,118 @@
             display: block;
             margin-bottom: 6px;
         }
-        input, select, textarea {
-            width: 100%;
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid var(--input-border);
-            background: var(--input-bg);
-            color: var(--input-text);
-            font-size: 15px;
-            outline: none;
-        }
+	        input, select, textarea {
+	            width: 100%;
+	            padding: 12px;
+	            border-radius: 12px;
+	            border: 1px solid var(--input-border);
+	            background: var(--input-bg);
+	            color: var(--input-text);
+	            font-size: 15px;
+	            outline: none;
+	        }
+	        input[type="file"] {
+	            padding: 9px 10px;
+	            cursor: pointer;
+	        }
+	        input[type="file"]::file-selector-button {
+	            margin-right: 10px;
+	            border: 1px solid var(--card-border);
+	            background: var(--btn-secondary-bg);
+	            color: var(--btn-secondary-text);
+	            padding: 9px 12px;
+	            border-radius: 12px;
+	            cursor: pointer;
+	            font-weight: 700;
+	        }
+	        input[type="file"]::-webkit-file-upload-button {
+	            margin-right: 10px;
+	            border: 1px solid var(--card-border);
+	            background: var(--btn-secondary-bg);
+	            color: var(--btn-secondary-text);
+	            padding: 9px 12px;
+	            border-radius: 12px;
+	            cursor: pointer;
+	            font-weight: 700;
+	        }
+	        input[type="file"]::file-selector-button:hover,
+	        input[type="file"]::-webkit-file-upload-button:hover {
+	            background: var(--table-row-hover);
+	        }
+	        input[type="file"]:focus-visible {
+	            outline: 2px solid var(--accent-soft);
+	            outline-offset: 2px;
+	        }
+	        .file-preview {
+	            display: grid;
+	            gap: 8px;
+	            margin-top: 10px;
+	        }
+	        .file-preview__row {
+	            display: flex;
+	            align-items: center;
+	            gap: 10px;
+	            padding: 10px 12px;
+	            border-radius: 14px;
+	            background: var(--table-row-bg);
+	            border: 1px solid var(--table-row-border);
+	        }
+	        .file-preview__actions {
+	            flex: 0 0 auto;
+	            display: inline-flex;
+	            align-items: center;
+	            gap: 10px;
+	        }
+	        .file-preview__note {
+	            font-size: 12px;
+	            color: var(--muted);
+	        }
+	        .file-preview__thumb {
+	            width: 44px;
+	            height: 44px;
+	            border-radius: 12px;
+	            object-fit: cover;
+	            background: var(--input-bg);
+	            border: 1px solid var(--card-border);
+	            flex: 0 0 auto;
+	        }
+	        .file-preview__meta {
+	            min-width: 0;
+	            display: grid;
+	            gap: 2px;
+	        }
+	        .file-preview__title {
+	            font-size: 12px;
+	            color: var(--muted);
+	        }
+	        .file-preview__name {
+	            font-weight: 700;
+	            overflow: hidden;
+	            text-overflow: ellipsis;
+	            white-space: nowrap;
+	        }
+	        .file-preview__link {
+	            display: inline-flex;
+	            align-items: center;
+	            gap: 8px;
+	            padding: 8px 12px;
+	            border-radius: 999px;
+	            border: 1px solid var(--card-border);
+	            background: var(--btn-secondary-bg);
+	            color: var(--btn-secondary-text);
+	            text-decoration: none;
+	            font-weight: 700;
+	            flex: 0 0 auto;
+	        }
+	        .file-preview__link:hover {
+	            background: var(--table-row-hover);
+	            border-color: var(--table-row-hover-border);
+	        }
+	        .file-preview__link svg {
+	            width: 16px;
+	            height: 16px;
+	            opacity: 0.9;
+	        }
         select {
             color-scheme: dark;
             appearance: none;
@@ -201,8 +362,50 @@
             color: var(--select-option-text);
         }
         input[type="checkbox"] {
-            width: auto;
-            margin-right: 8px;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 6px;
+            border: 1px solid var(--card-border);
+            background: var(--input-bg);
+            display: inline-grid;
+            place-content: center;
+            margin: 0 10px 0 0;
+            vertical-align: middle;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+        }
+        input[type="checkbox"]:hover {
+            border-color: var(--table-row-hover-border);
+        }
+        input[type="checkbox"]:active {
+            transform: scale(0.96);
+        }
+        input[type="checkbox"]:focus-visible {
+            outline: 2px solid var(--accent-soft);
+            outline-offset: 2px;
+        }
+        input[type="checkbox"]:checked {
+            border-color: transparent;
+            background-image:
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='%2315171c' d='M7.8 13.6 4.4 10.2l-1.4 1.4 4.8 4.8L17 7.2l-1.4-1.4z'/%3E%3C/svg%3E"),
+                var(--btn-bg);
+            background-repeat: no-repeat, no-repeat;
+            background-position: center, center;
+            background-size: 12px 12px, cover;
+        }
+        input[type="checkbox"]:indeterminate {
+            border-color: transparent;
+            background-image:
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='%2315171c' d='M5 9h10v2H5z'/%3E%3C/svg%3E"),
+                var(--btn-bg);
+            background-repeat: no-repeat, no-repeat;
+            background-position: center, center;
+            background-size: 12px 12px, cover;
+        }
+        input[type="checkbox"]:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
         }
         .toggle {
             display: inline-flex;
@@ -228,7 +431,7 @@
             width: 18px;
             height: 18px;
             border-radius: 50%;
-            background: var(--btn-text);
+            background: rgba(241, 245, 255, 0.92);
             top: 2px;
             left: 3px;
             transition: transform 0.2s ease, background 0.2s ease;
@@ -272,6 +475,18 @@
         .btn.secondary {
             background: var(--btn-secondary-bg);
             color: var(--btn-secondary-text);
+            border: 1px solid var(--card-border);
+        }
+        .btn.danger,
+        button.danger {
+            background: var(--danger-bg);
+            color: var(--danger-text);
+            border: 1px solid rgba(255, 59, 59, 0.32);
+        }
+        .btn.danger:hover,
+        button.danger:hover {
+            border-color: rgba(255, 59, 59, 0.48);
+            filter: brightness(1.05);
         }
         .errorlist {
             margin: 0 0 12px;
@@ -281,14 +496,223 @@
             color: var(--danger-text);
             list-style: none;
         }
-        .small {
-            font-size: 12px;
-            color: var(--muted);
-        }
-        .score-green {
-            color: #29f2b3;
-            font-weight: 700;
-        }
+	        .small {
+	            font-size: 12px;
+	            color: var(--muted);
+	        }
+	        .data-table {
+	            width: 100%;
+	            border-collapse: separate;
+	            border-spacing: 0 10px;
+	        }
+	        .table-scroll {
+	            width: 100%;
+	            overflow-x: auto;
+	            -webkit-overflow-scrolling: touch;
+	        }
+	        .table-scroll .data-table {
+	            min-width: max(720px, 100%);
+	        }
+	        .data-table thead th {
+	            text-align: left;
+	            padding: 6px 12px;
+	            font-size: 12px;
+	            letter-spacing: 0.02em;
+	            color: var(--table-head);
+	            font-weight: 600;
+	            overflow-wrap: break-word;
+	        }
+	        .data-table tbody tr {
+	            filter: var(--table-row-shadow);
+	        }
+	        .data-table tbody td {
+	            padding: 12px 12px;
+	            vertical-align: middle;
+	            background: var(--table-row-bg);
+	            border-top: 1px solid var(--table-row-border);
+	            border-bottom: 1px solid var(--table-row-border);
+	            overflow-wrap: break-word;
+	        }
+	        .data-table tbody td:first-child {
+	            border-left: 1px solid var(--table-row-border);
+	            border-top-left-radius: 16px;
+	            border-bottom-left-radius: 16px;
+	        }
+	        .data-table tbody td:last-child {
+	            border-right: 1px solid var(--table-row-border);
+	            border-top-right-radius: 16px;
+	            border-bottom-right-radius: 16px;
+	        }
+	        .data-table tbody tr:hover td {
+	            background: var(--table-row-hover);
+	            border-color: var(--table-row-hover-border);
+	        }
+	        .data-table th.wrap,
+	        .data-table td.wrap {
+	            white-space: normal;
+	        }
+	        .data-table th.nowrap,
+	        .data-table td.nowrap {
+	            white-space: nowrap;
+	        }
+	        .data-table th.actions-col,
+	        .data-table td.actions-col {
+	            width: 1%;
+	            white-space: nowrap;
+	            text-align: right;
+	        }
+	        .data-table .btn,
+	        .data-table button {
+	            padding: 9px 12px;
+	            border-radius: 12px;
+	            font-size: 13px;
+	            line-height: 1.1;
+	        }
+	        .data-table .actions {
+	            flex-wrap: wrap;
+	            justify-content: flex-end;
+	            margin-top: 0;
+	        }
+	        .assignment-list {
+			display: grid;
+			gap: 6px;
+		}
+	        .assignment-list-item {
+			font-size: 13px;
+			line-height: 1.5;
+		}
+	        .assignment-list-item span {
+			color: var(--muted);
+			font-size: 12px;
+		}
+	        .user-picker {
+	            margin-top: 10px;
+	        }
+	        .user-picker__filters {
+	            display: grid;
+	            grid-template-columns: 1fr 240px;
+	            gap: 10px;
+	            align-items: center;
+	            margin-bottom: 10px;
+	        }
+	        .user-picker__filters input,
+	        .user-picker__filters select {
+	            height: 44px;
+	        }
+	        .user-picker__list {
+	            max-height: 320px;
+	            overflow: auto;
+	            padding: 8px;
+	            border-radius: 16px;
+	            border: 1px solid var(--card-border);
+	            background: rgba(255, 255, 255, 0.03);
+	        }
+	        :root[data-theme="light"] .user-picker__list {
+	            background: rgba(255, 255, 255, 0.35);
+	        }
+	        .user-picker__list #id_users {
+	            display: grid;
+	            gap: 10px;
+	        }
+	        .user-picker__list #id_users > div {
+	            padding: 10px 12px;
+	            border-radius: 14px;
+	            background: var(--table-row-bg);
+	            border: 1px solid var(--table-row-border);
+	        }
+	        .user-picker__list #id_users > div:hover {
+	            border-color: var(--table-row-hover-border);
+	            background: var(--table-row-hover);
+	        }
+	        .user-picker__list #id_users label {
+	            display: flex;
+	            align-items: center;
+	            gap: 10px;
+	            cursor: pointer;
+	        }
+	        .user-picker__items {
+	            display: grid;
+	            gap: 10px;
+	        }
+	        .user-picker__item {
+	            padding: 10px 12px;
+	            border-radius: 14px;
+	            background: var(--table-row-bg);
+	            border: 1px solid var(--table-row-border);
+	            display: flex;
+	            align-items: center;
+	            justify-content: space-between;
+	            gap: 12px;
+	        }
+	        .user-picker__item:hover {
+	            border-color: var(--table-row-hover-border);
+	            background: var(--table-row-hover);
+	        }
+	        .user-picker__item.is-assigned {
+	            background: linear-gradient(135deg, var(--accent-soft), rgba(255, 255, 255, 0.02));
+	            border-color: rgba(157, 255, 43, 0.35);
+	            box-shadow: 0 0 0 1px rgba(157, 255, 43, 0.06), 0 14px 36px rgba(157, 255, 43, 0.08);
+	        }
+	        :root[data-theme="light"] .user-picker__item.is-assigned {
+	            background: linear-gradient(135deg, rgba(157, 255, 43, 0.20), rgba(255, 255, 255, 0.60));
+	            border-color: rgba(157, 255, 43, 0.45);
+	            box-shadow: 0 0 0 1px rgba(157, 255, 43, 0.10), 0 18px 40px rgba(16, 24, 40, 0.08);
+	        }
+	        .user-picker__label {
+	            display: flex;
+	            align-items: center;
+	            gap: 10px;
+	            cursor: pointer;
+	            min-width: 0;
+	        }
+	        .user-picker__label--assigned {
+	            cursor: default;
+	        }
+	        .user-picker__text {
+	            overflow: hidden;
+	            text-overflow: ellipsis;
+	            white-space: nowrap;
+	        }
+	        .user-picker__actions {
+	            flex: 0 0 auto;
+	            display: flex;
+	            align-items: center;
+	            gap: 10px;
+	        }
+	        .user-picker__badge {
+	            flex: 0 0 auto;
+	            padding: 6px 10px;
+	            border-radius: 999px;
+	            background: var(--nav-active-bg);
+	            color: var(--nav-active-text);
+	            font-size: 12px;
+	            font-weight: 700;
+	            line-height: 1;
+	        }
+	        .user-picker__hint {
+	            font-size: 12px;
+	            color: var(--muted);
+	            margin-top: 8px;
+	        }
+	        @media (max-width: 820px) {
+	            .user-picker__filters {
+	                grid-template-columns: 1fr;
+	            }
+	        }
+	        .item-card {
+	            padding: 16px;
+	            border-radius: 16px;
+	            background: var(--table-row-bg);
+	            border: 1px solid var(--table-row-border);
+	            box-shadow: var(--shadow-lg);
+	        }
+	        .item-card:hover {
+	            border-color: var(--table-row-hover-border);
+	        }
+	        .score-green {
+	            color: #29f2b3;
+	            font-weight: 700;
+	        }
         .score-yellow {
             color: #ffd166;
             font-weight: 700;
@@ -312,7 +736,7 @@
 <body>
     {% if request.user.is_authenticated %}
         <div class="topbar">
-            <div class="brand">ArtCulinary</div>
+            <div class="brand">АРТ КУЛИНАРИЯ</div>
             <nav class="nav">
                 {% if request.user.is_superuser or request.user.role == 'ADMIN' %}
                     <a href="{% url 'admin_panel' %}">Админ‑панель</a>
@@ -331,6 +755,7 @@
                 {% if request.user.role == 'ANALYST' %}
                     <a href="{% url 'analyst_dashboard' %}" class="{% if request.resolver_match.url_name == 'analyst_dashboard' or request.resolver_match.url_name == 'analyst_export' %}active{% endif %}">Аналитика</a>
                 {% endif %}
+                <a href="{% url 'chat_inbox' %}" class="{% if request.resolver_match.url_name == 'chat_inbox' or request.resolver_match.url_name == 'chat_thread' or request.resolver_match.url_name == 'chat_start' %}active{% endif %}">Чаты</a>
                 <button type="button" class="theme-toggle" id="themeToggle">Тема</button>
                 <a href="{% url 'profile' %}" class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}">Профиль</a>
                 <form method="post" action="{% url 'logout' %}">
@@ -359,6 +784,263 @@
             btn.addEventListener('click', () => {
                 const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
                 applyTheme(next);
+            });
+        })();
+    </script>
+    <script>
+        (function () {
+            function safeText(value) {
+                return (value || '').toString().replace(/\s+/g, ' ').trim();
+            }
+
+            function isLikelyImage(fileOrName) {
+                const name = typeof fileOrName === 'string' ? fileOrName : (fileOrName && fileOrName.name) || '';
+                const type = typeof fileOrName === 'object' ? (fileOrName.type || '') : '';
+                if (type && type.startsWith('image/')) return true;
+                return /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(name);
+            }
+
+            function ensurePreview(input) {
+                const parent = input.parentElement;
+                if (!parent) return null;
+                let preview = parent.querySelector('.file-preview');
+                if (!preview) {
+                    preview = document.createElement('div');
+                    preview.className = 'file-preview';
+                    input.insertAdjacentElement('afterend', preview);
+                }
+                if (!preview.dataset.ready) {
+                    preview.dataset.ready = '1';
+                    preview.innerHTML = `
+                        <div class="file-preview__row file-preview__current" style="display:none;">
+                            <img class="file-preview__thumb" alt="" style="display:none;">
+                            <div class="file-preview__meta">
+                                <div class="file-preview__title">Загружено</div>
+                                <div class="file-preview__name"></div>
+                            </div>
+                            <div class="file-preview__actions">
+                                <a class="file-preview__link" target="_blank" rel="noopener">
+                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M16.5 16.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                    Посмотреть
+                                </a>
+                            </div>
+                        </div>
+                        <div class="file-preview__row file-preview__selected" style="display:none;">
+                            <img class="file-preview__thumb" alt="" style="display:none;">
+                            <div class="file-preview__meta">
+                                <div class="file-preview__title">Выбрано</div>
+                                <div class="file-preview__name"></div>
+                                <div class="file-preview__note">Сохранится после отправки формы</div>
+                            </div>
+                            <div class="file-preview__actions">
+                                <a class="file-preview__link" target="_blank" rel="noopener" style="display:none;">
+                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M16.5 16.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                    Посмотреть
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                }
+                return preview;
+            }
+
+            function ensureImageModal() {
+                let modal = document.querySelector('[data-image-modal]');
+                if (modal) return modal;
+                modal = document.createElement('div');
+                modal.setAttribute('data-image-modal', '1');
+                modal.style.cssText = `
+                    position: fixed;
+                    inset: 0;
+                    display: none;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 18px;
+                    background: rgba(0, 0, 0, 0.72);
+                    z-index: 9999;
+                `;
+                modal.innerHTML = `
+                    <div style="max-width: min(1200px, 96vw); max-height: 90vh; width: 100%;">
+                        <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+                            <button type="button" class="btn secondary" data-image-modal-close>Закрыть</button>
+                        </div>
+                        <img data-image-modal-img alt="" style="width:100%; height:auto; max-height:80vh; object-fit:contain; border-radius:16px; border:1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.2);">
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                const close = () => {
+                    modal.style.display = 'none';
+                    const img = modal.querySelector('[data-image-modal-img]');
+                    if (img) img.removeAttribute('src');
+                };
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) close();
+                });
+                const btn = modal.querySelector('[data-image-modal-close]');
+                if (btn) btn.addEventListener('click', close);
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && modal.style.display !== 'none') close();
+                });
+                return modal;
+            }
+
+            function openImageInModal(url) {
+                if (!url) return;
+                const modal = ensureImageModal();
+                const img = modal.querySelector('[data-image-modal-img]');
+                if (!img) return;
+                img.src = url;
+                modal.style.display = 'flex';
+            }
+
+            function renderCurrent(input, preview) {
+                const row = preview.querySelector('.file-preview__current');
+                if (!row) return;
+                const url = input.dataset.currentUrl;
+                const name = safeText(input.dataset.currentName) || 'Файл';
+                const isImage = input.dataset.currentIsImage === '1' || input.dataset.preview === 'image';
+                if (!url) {
+                    row.style.display = 'none';
+                    return;
+                }
+                row.style.display = '';
+                row.querySelector('.file-preview__name').textContent = name;
+                const link = row.querySelector('.file-preview__link');
+                link.href = url;
+                row.dataset.isImage = isImage ? '1' : '0';
+                const thumb = row.querySelector('.file-preview__thumb');
+                if (thumb) {
+                    if (isImage) {
+                        thumb.src = url;
+                        thumb.style.display = '';
+                    } else {
+                        thumb.removeAttribute('src');
+                        thumb.style.display = 'none';
+                    }
+                }
+            }
+
+            function renderSelected(file, preview) {
+                const row = preview.querySelector('.file-preview__selected');
+                if (!row) return;
+                const link = row.querySelector('.file-preview__link');
+                if (!file) {
+                    row.style.display = 'none';
+                    const thumb = row.querySelector('.file-preview__thumb');
+                    if (thumb && thumb.dataset.objectUrl) {
+                        URL.revokeObjectURL(thumb.dataset.objectUrl);
+                        delete thumb.dataset.objectUrl;
+                    }
+                    if (link && link.dataset.objectUrl) {
+                        URL.revokeObjectURL(link.dataset.objectUrl);
+                        delete link.dataset.objectUrl;
+                    }
+                    return;
+                }
+                row.style.display = '';
+                row.querySelector('.file-preview__name').textContent = safeText(file.name) || 'Файл';
+                row.dataset.isImage = isLikelyImage(file) ? '1' : '0';
+                const thumb = row.querySelector('.file-preview__thumb');
+                if (thumb) {
+                    if (thumb.dataset.objectUrl) {
+                        URL.revokeObjectURL(thumb.dataset.objectUrl);
+                        delete thumb.dataset.objectUrl;
+                    }
+                    if (isLikelyImage(file)) {
+                        const url = URL.createObjectURL(file);
+                        thumb.dataset.objectUrl = url;
+                        thumb.src = url;
+                        thumb.style.display = '';
+                    } else {
+                        thumb.removeAttribute('src');
+                        thumb.style.display = 'none';
+                    }
+                }
+                if (link) {
+                    if (link.dataset.objectUrl) {
+                        URL.revokeObjectURL(link.dataset.objectUrl);
+                        delete link.dataset.objectUrl;
+                    }
+                    const url = URL.createObjectURL(file);
+                    link.dataset.objectUrl = url;
+                    link.href = url;
+                    link.style.display = '';
+                }
+            }
+
+            function findClearCheckbox(input) {
+                const name = input.getAttribute('name');
+                if (!name) return null;
+                try {
+                    return document.querySelector(`input[type="checkbox"][name="${CSS.escape(name)}-clear"]`);
+                } catch {
+                    return document.querySelector(`input[type="checkbox"][name="${name}-clear"]`);
+                }
+            }
+
+            function initForInput(input) {
+                if (!input || input.type !== 'file') return;
+                if (input.disabled) return;
+                if (input.style && input.style.display === 'none') return;
+                const preview = ensurePreview(input);
+                if (!preview) return;
+                renderCurrent(input, preview);
+                renderSelected(input.files && input.files[0] ? input.files[0] : null, preview);
+
+                input.addEventListener('change', () => {
+                    renderSelected(input.files && input.files[0] ? input.files[0] : null, preview);
+                });
+
+                preview.addEventListener('click', (e) => {
+                    const a = e.target && e.target.closest ? e.target.closest('.file-preview__link') : null;
+                    if (!a) return;
+                    const row = a.closest('.file-preview__row');
+                    if (!row) return;
+                    if (row.dataset.isImage === '1') {
+                        e.preventDefault();
+                        openImageInModal(a.getAttribute('href'));
+                    }
+                });
+
+                const clear = findClearCheckbox(input);
+                if (clear) {
+                    const onClear = () => {
+                        if (clear.checked) {
+                            const row = preview.querySelector('.file-preview__current');
+                            if (row) row.style.display = 'none';
+                        } else {
+                            renderCurrent(input, preview);
+                        }
+                    };
+                    clear.addEventListener('change', onClear);
+                    onClear();
+                }
+            }
+
+            function initAll(root) {
+                const scope = root || document;
+                scope.querySelectorAll('input[type="file"]').forEach(initForInput);
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => initAll(document));
+            } else {
+                initAll(document);
+            }
+
+            document.addEventListener('click', (e) => {
+                const trigger = e.target && e.target.closest ? e.target.closest('[data-open-image]') : null;
+                if (!trigger) return;
+                const url = trigger.getAttribute('data-open-image');
+                if (!url) return;
+                e.preventDefault();
+                openImageInModal(url);
             });
         })();
     </script>

@@ -115,6 +115,14 @@
             {{ form.file.errors }}
         </div>
 
+        {% if not is_edit %}
+            <div style="margin-top:14px;">
+                <label for="{{ form.files.id_for_label }}">Дополнительные файлы</label>
+                {{ form.files }}
+                {{ form.files.errors }}
+            </div>
+        {% endif %}
+
         <div style="margin-top:18px;">
             <label>Содержание лекции</label>
             <div class="editor-toolbar">

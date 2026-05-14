@@ -2,40 +2,120 @@
 
 {% block title %}Мои курсы{% endblock %}
 
+{% block extra_styles %}
+<style>
+    .employee-actions {
+        margin-top: 12px;
+        display: flex;
+        gap: 8px;
+    }
+    .employee-table th,
+    .employee-table td {
+        padding: 8px 6px;
+        text-align: left;
+        vertical-align: top;
+    }
+    .due-pill {
+        padding: 4px 10px;
+        border-radius: 999px;
+        display: inline-block;
+        border: 1px solid transparent;
+    }
+    .due-pill.overdue {
+        color: #b42318;
+        background: rgba(180, 35, 24, 0.10);
+        border-color: rgba(180, 35, 24, 0.24);
+    }
+    .due-pill.soon {
+        color: #9a6700;
+        background: rgba(154, 103, 0, 0.10);
+        border-color: rgba(154, 103, 0, 0.24);
+    }
+    html[data-theme="dark"] .due-pill.overdue {
+        color: #ffdede;
+        background: rgba(255, 0, 0, 0.18);
+        border-color: rgba(255, 108, 108, 0.35);
+    }
+    html[data-theme="dark"] .due-pill.soon {
+        color: #fff2cc;
+        background: rgba(255, 193, 7, 0.18);
+        border-color: rgba(255, 208, 84, 0.35);
+    }
+    .table-wrap {
+        width: 100%;
+        overflow-x: auto;
+    }
+    @media (max-width: 900px) {
+        .employee-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .employee-actions .btn {
+            width: 100%;
+            text-align: center;
+        }
+        .employee-table {
+            min-width: 820px;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="card">
     <h1>Мои курсы</h1>
     <div class="small">Здесь отображаются курсы, назначенные вам менеджером.</div>
+    <div class="actions employee-actions">
+        <a class="btn secondary" href="{% url 'employee_progress' %}">Мой прогресс</a>
+    </div>
 </div>
 
+{% if overdue_count or due_soon_count %}
 <div class="card">
-    {% if enrollments %}
-        <table style="width:100%; border-collapse:collapse;">
+    <h2>Напоминания</h2>
+    <div class="small">
+        {% if overdue_count %}Просрочено: <strong>{{ overdue_count }}</strong>{% endif %}
+        {% if overdue_count and due_soon_count %} · {% endif %}
+        {% if due_soon_count %}Срок скоро: <strong>{{ due_soon_count }}</strong>{% endif %}
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    {% if enrollments_view %}
+        <div class="table-wrap">
+        <table class="data-table employee-table">
             <thead>
-                <tr style="text-align:left;">
-                    <th style="padding:8px 6px;">Курс</th>
-                    <th style="padding:8px 6px;">Специальность</th>
-                    <th style="padding:8px 6px;">Создатель</th>
-                    <th style="padding:8px 6px;">Статус</th>
-                    <th style="padding:8px 6px;">Срок</th>
-                    <th style="padding:8px 6px;"></th>
+                <tr>
+                    <th>Курс</th>
+                    <th>Специальность</th>
+                    <th>Создатель</th>
+                    <th>Статус</th>
+                    <th>Срок</th>
+                    <th class="actions-col"></th>
                 </tr>
             </thead>
             <tbody>
-                {% for enrollment in enrollments %}
-                    <tr style="border-top:1px solid rgba(255,255,255,0.12);">
-                        <td style="padding:8px 6px;">{{ enrollment.course.title }}</td>
-                        <td style="padding:8px 6px;">{{ enrollment.course.specialty|default:"—" }}</td>
-                        <td style="padding:8px 6px;">{{ enrollment.course.created_by.get_full_name|default:enrollment.course.created_by.email }}</td>
-                        <td style="padding:8px 6px;">{{ enrollment.get_status_display }}</td>
-                        <td style="padding:8px 6px;">{{ enrollment.due_date|date:"d.m.Y"|default:"—" }}</td>
-                        <td style="padding:8px 6px;">
-                            <a class="btn secondary" href="{% url 'employee_course_detail' enrollment.course.id %}">Открыть</a>
+                {% for item in enrollments_view %}
+                    {% with enrollment=item.enrollment %}
+                    <tr>
+                        <td>{{ enrollment.course.title }}</td>
+                        <td>{{ enrollment.course.specialty|default:"—" }}</td>
+                        <td>{{ enrollment.course.created_by.get_full_name|default:enrollment.course.created_by.email }}</td>
+                        <td>{{ enrollment.get_status_display }}</td>
+                        <td>
+                            <span class="due-pill{% if item.due_status == 'overdue' %} overdue{% elif item.due_status == 'soon' %} soon{% endif %}">{{ item.due_text }}</span>
+                        </td>
+                        <td class="actions-col">
+                            <a class="btn secondary" href="{% url 'employee_course_detail' enrollment.course.id %}">Просмотреть</a>
                         </td>
                     </tr>
+                    {% endwith %}
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     {% else %}
         <div class="small">Пока нет назначенных курсов.</div>
     {% endif %}

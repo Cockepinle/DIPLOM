@@ -1,0 +1,141 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Чаты{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .chat-grid {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 16px;
+        margin-top: 16px;
+    }
+    .chat-card {
+        padding: 14px 14px;
+        border-radius: 18px;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        backdrop-filter: blur(10px);
+    }
+    .chat-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        padding: 10px 12px;
+        border-radius: 16px;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        text-decoration: none;
+        color: inherit;
+    }
+    .chat-item:hover {
+        border-color: var(--nav-active-bg);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+    .chat-item__title { font-weight: 800; }
+    .chat-item__meta { opacity: 0.78; font-size: 12px; max-width: 520px; overflow:hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chat-search-form {
+        margin-top: 12px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .chat-search {
+        flex: 1 1 280px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid var(--card-border);
+        background: var(--card-bg);
+        color: inherit;
+        outline: none;
+    }
+    .chat-search:focus {
+        border-color: var(--nav-active-bg);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+    .chat-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 12px;
+    }
+    .chat-item-main { min-width: 0; }
+    .chat-item-meta-line { opacity: 0.78; }
+    
+    .chat-start-btn {
+        background: var(--btn-bg) !important;
+        color: var(--btn-text) !important;
+        border: 1px solid transparent !important;
+    }
+    .chat-start-btn:hover {
+        filter: brightness(1.02);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-card">
+    <h1>Чаты</h1>
+    <div class="small">Личные диалоги между сотрудниками. Выберите диалог или начните новый.</div>
+    <form method="get" class="chat-search-form">
+        <input class="chat-search" name="q" value="{{ q }}" placeholder="Поиск сотрудника (ФИО / email / отдел)…">
+        <button class="btn secondary" type="submit">Найти</button>
+        {% if q %}
+            <a class="btn secondary" href="{% url 'chat_inbox' %}">Сброс</a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="chat-grid">
+    <div class="chat-card">
+        <h2>Мои диалоги</h2>
+        <div class="chat-list">
+            {% if chat_rows %}
+                {% for row in chat_rows %}
+                    <a class="chat-item" href="{% url 'chat_thread' row.chat.id %}">
+                        <div class="chat-item-main">
+                            <div class="chat-item__title">{{ row.other.get_full_name|default:row.other.email }}</div>
+                            <div class="chat-item__meta">
+                                {% if row.last_message_text %}
+                                    {{ row.last_message_text }}
+                                {% else %}
+                                    Пока нет сообщений
+                                {% endif %}
+                            </div>
+                            <div class="small chat-item-meta-line">{{ row.other.email }}{% if row.other.department %} · {{ row.other.department }}{% endif %}</div>
+                        </div>
+                        <div class="small chat-item-time">
+                            {% if row.last_message_at %}{{ row.last_message_at|date:"d.m H:i" }}{% endif %}
+                        </div>
+                    </a>
+                {% endfor %}
+            {% else %}
+                <div class="small">Пока нет диалогов. Начните чат справа.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="chat-card">
+        <h2>Сотрудники</h2>
+        {% if people %}
+            <div class="chat-list">
+                {% for u in people %}
+                    <div class="chat-item">
+                        <div class="chat-item-main">
+                            <div class="chat-item__title">{{ u.get_full_name|default:u.email }}</div>
+                            <div class="small chat-item-meta-line">{{ u.email }}{% if u.department %} · {{ u.department }}{% endif %}</div>
+                        </div>
+                        <a class="btn chat-start-btn" href="{% url 'chat_start' u.id %}">Написать</a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="small">Сотрудники не найдены.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

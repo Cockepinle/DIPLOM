@@ -1,0 +1,290 @@
+{% extends "manager/base.html" %}
+
+{% block title %}Прогресс{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .metrics {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+    }
+    .metric {
+        padding: 14px 16px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid var(--card-border);
+    }
+    .metric .label {
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 6px;
+    }
+    .metric .value {
+        font-size: 20px;
+        font-weight: 700;
+    }
+    .rows {
+        display: grid;
+        gap: 10px;
+    }
+    .row {
+        display: grid;
+        grid-template-columns: 1fr 90px;
+        gap: 12px;
+        align-items: center;
+        padding: 10px 12px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.10);
+    }
+    .bar {
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.16);
+        overflow: hidden;
+        margin-top: 6px;
+    }
+    .bar span {
+        display: block;
+        height: 100%;
+        background: var(--nav-active-bg);
+    }
+    .chart-wrap {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        padding: 10px 12px;
+        min-height: 220px;
+    }
+    .chart-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        margin-bottom: 10px;
+    }
+    .chart-meta {
+        font-size: 12px;
+        color: var(--muted);
+    }
+    .chart-svg {
+        width: 100%;
+        height: 180px;
+        display: block;
+    }
+    .split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    @media (max-width: 900px) {
+        .split { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Прогресс: {{ target_user.last_name }} {{ target_user.first_name }}</h1>
+    <div class="small">
+        Здесь собраны графики прогресса, напоминания по срокам и текущие уровни компетенций.
+    </div>
+</div>
+
+<div class="card">
+    <div class="metrics">
+        <div class="metric">
+            <div class="label">Курсы назначены</div>
+            <div class="value">{{ summary.assigned_courses }}</div>
+        </div>
+        <div class="metric">
+            <div class="label">Курсы завершены</div>
+            <div class="value">{{ summary.completed_courses }}</div>
+        </div>
+        <div class="metric">
+            <div class="label">Курсы в процессе</div>
+            <div class="value">{{ summary.courses_in_progress }}</div>
+        </div>
+        <div class="metric">
+            <div class="label">Курсы просрочены</div>
+            <div class="value">{{ summary.courses_overdue }}</div>
+        </div>
+        <div class="metric">
+            <div class="label">Средний прогресс по курсам</div>
+            <div class="value">{% if summary.progress_avg or summary.progress_avg == 0 %}{{ summary.progress_avg|floatformat:1 }}%{% else %}—{% endif %}</div>
+        </div>
+        <div class="metric">
+            <div class="label">Тестов пройдено</div>
+            <div class="value">{{ summary.tests_taken }}</div>
+        </div>
+        <div class="metric">
+            <div class="label">Тестов сдано</div>
+            <div class="value">{{ summary.tests_passed }}</div>
+        </div>
+        <div class="metric">
+            <div class="label">Средний балл</div>
+            <div class="value">{% if summary.avg_score or summary.avg_score == 0 %}{{ summary.avg_score|floatformat:1 }}%{% else %}—{% endif %}</div>
+        </div>
+    </div>
+</div>
+
+{% if overdue_items or due_soon_items %}
+<div class="card">
+    <h2>Напоминания</h2>
+    {% if overdue_items %}
+        <div class="small" style="margin-bottom:8px;">Просрочено</div>
+        <div class="rows">
+            {% for item in overdue_items %}
+                <div class="row">
+                    <div>
+                        <div style="font-weight:600;">{{ item.title }}</div>
+                        <div class="small">Срок: {{ item.due_date|date:"d.m.Y" }} · просрочено на {{ item.days_overdue }} дн.</div>
+                    </div>
+                    <div style="text-align:right; color:#ffdede;">{{ item.days_overdue }} дн.</div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% if due_soon_items %}
+        <div class="small" style="margin:14px 0 8px;">Срок скоро (0–3 дня)</div>
+        <div class="rows">
+            {% for item in due_soon_items %}
+                <div class="row">
+                    <div>
+                        <div style="font-weight:600;">{{ item.title }}</div>
+                        <div class="small">Срок: {{ item.due_date|date:"d.m.Y" }} · осталось {{ item.days_left }} дн.</div>
+                    </div>
+                    <div style="text-align:right; color:#fff2cc;">{{ item.days_left }} дн.</div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="chart-title">
+        <h2 style="margin:0;">Прогресс по курсам</h2>
+        <div class="chart-meta">Текущий процент выполнения</div>
+    </div>
+    {% if courses_progress %}
+        <div class="rows">
+            {% for item in courses_progress %}
+                <div class="row">
+                    <div>
+                        <div style="font-weight:600;">{{ item.course_title }}</div>
+                        <div class="bar"><span style="width:{{ item.progress|floatformat:0 }}%"></span></div>
+                        <div class="small" style="margin-top:6px;">
+                            {{ item.progress|floatformat:0 }}% · {{ item.status }}
+                        </div>
+                    </div>
+                    <div style="text-align:right; font-weight:700;">{{ item.progress|floatformat:0 }}%</div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="small">Курсы ещё не назначены.</div>
+    {% endif %}
+</div>
+
+{{ test_monthly_series|json_script:"testMonthlySeries" }}
+{{ task_monthly_series|json_script:"taskMonthlySeries" }}
+
+<div class="split">
+    <div class="card">
+        <div class="chart-title">
+            <h2 style="margin:0;">Тесты по месяцам</h2>
+            <div class="chart-meta">Количество попыток (без “На проверке”)</div>
+        </div>
+        <div class="chart-wrap">
+            <svg class="chart-svg" id="testsChart" viewBox="0 0 600 180" preserveAspectRatio="none"></svg>
+        </div>
+    </div>
+    <div class="card">
+        <div class="chart-title">
+            <h2 style="margin:0;">Задания по месяцам</h2>
+            <div class="chart-meta">Количество отправок</div>
+        </div>
+        <div class="chart-wrap">
+            <svg class="chart-svg" id="tasksChart" viewBox="0 0 600 180" preserveAspectRatio="none"></svg>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Компетенции</h2>
+    <div class="small" style="margin-bottom:12px;">
+        Компетенция — это “навык/умение”, которое можно оценивать уровнем (например, 0–10) и обновлять по источникам:
+        тесты, практические задания, оценка менеджера, самооценка.
+    </div>
+    {% if competency_rows %}
+        <div class="rows">
+            {% for row in competency_rows %}
+                <div class="row">
+                    <div>
+                        <div style="font-weight:600;">{{ row.name }}</div>
+                        <div class="bar"><span style="width:{% widthratio row.level 10 100 %}%"></span></div>
+                        <div class="small" style="margin-top:6px;">Уровень: {{ row.level }}/10 · источник: {{ row.source }}</div>
+                    </div>
+                    <div style="text-align:right; font-weight:700;">{{ row.level }}/10</div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="small">Пока нет оценок компетенций.</div>
+    {% endif %}
+</div>
+
+<script>
+    (function () {
+        function renderBars(svgId, series, valueKey) {
+            const svg = document.getElementById(svgId);
+            if (!svg) return;
+            const data = Array.isArray(series) ? series : [];
+            if (!data.length) {
+                svg.innerHTML = '<text x="10" y="24" style="fill: var(--muted);" font-size="12">Нет данных</text>';
+                return;
+            }
+            const values = data.map((x) => Number(x[valueKey] || 0));
+            const maxV = Math.max(...values, 1);
+            const paddingX = 30;
+            const paddingY = 18;
+            const w = 600;
+            const h = 180;
+            const innerW = w - paddingX * 2;
+            const innerH = h - paddingY * 2;
+            const gap = 8;
+            const barW = Math.max(6, Math.floor((innerW - gap * (data.length - 1)) / data.length));
+            let x = paddingX;
+            const bars = [];
+            for (let i = 0; i < data.length; i++) {
+                const v = values[i];
+                const barH = Math.round((v / maxV) * innerH);
+                const y = paddingY + (innerH - barH);
+                const label = (data[i].month || '').toString();
+                bars.push(`
+                    <rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="4" fill="url(#grad)"></rect>
+                    <text x="${x + barW / 2}" y="${h - 4}" text-anchor="middle" font-size="10" style="fill: var(--muted);">${label.slice(5)}</text>
+                `);
+                x += barW + gap;
+            }
+            svg.innerHTML = `
+                <defs>
+                    <linearGradient id="grad" x1="0" x2="1" y1="0" y2="1">
+                        <stop offset="0" stop-color="var(--accent-2)"></stop>
+                        <stop offset="1" stop-color="var(--accent)"></stop>
+                    </linearGradient>
+                </defs>
+                ${bars.join('')}
+            `;
+        }
+
+        const testsSeries = JSON.parse(document.getElementById('testMonthlySeries')?.textContent || '[]');
+        const tasksSeries = JSON.parse(document.getElementById('taskMonthlySeries')?.textContent || '[]');
+        renderBars('testsChart', testsSeries, 'count');
+        renderBars('tasksChart', tasksSeries, 'count');
+    })();
+</script>
+{% endblock %}

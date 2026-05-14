@@ -1,5 +1,8 @@
 from django import forms
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.forms import PasswordResetForm
+from django.utils import timezone
+import os
 
 from .models import User, Specialty, Position
 
@@ -11,11 +14,13 @@ class UserRegisterForm(forms.ModelForm):
     specialty = forms.ModelChoiceField(
         queryset=Specialty.objects.filter(is_active=True),
         label='Специальность',
+        empty_label='Выберите специальность',
     )
     position = forms.ModelChoiceField(
         queryset=Position.objects.filter(is_active=True),
         label='Должность',
         required=False,
+        empty_label='Выберите должность',
     )
     password1 = forms.CharField(
         label='Пароль',
@@ -58,6 +63,10 @@ class UserRegisterForm(forms.ModelForm):
         user = super().save(commit=False)
         email = (self.cleaned_data.get('email') or '').strip().lower()
         user.email = email
+        user.role = User.Role.EMPLOYEE
+        user.is_active = False
+        user.registration_status = User.RegistrationStatus.PENDING
+        user.registration_requested_at = timezone.now()
         user.set_password(self.cleaned_data['password1'])
         if commit:
             user.save()
@@ -65,6 +74,8 @@ class UserRegisterForm(forms.ModelForm):
 
 
 class UserProfileForm(forms.ModelForm):
+    remove_avatar = forms.BooleanField(required=False, initial=False)
+
     class Meta:
         model = User
         fields = (
@@ -75,10 +86,24 @@ class UserProfileForm(forms.ModelForm):
             'position',
         )
         widgets = {
-            'avatar': forms.ClearableFileInput(
-                attrs={'accept': 'image/*'}
-            )
+            'avatar': forms.FileInput(attrs={'accept': 'image/*'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name in ('first_name', 'last_name', 'department', 'position'):
+            field = self.fields.get(field_name)
+            if field:
+                field.disabled = True
+        field = self.fields.get('avatar')
+        if not field:
+            return
+        field.widget.attrs.setdefault('data-preview', 'image')
+        avatar = getattr(self.instance, 'avatar', None)
+        if avatar and getattr(avatar, 'url', None):
+            field.widget.attrs['data-current-url'] = avatar.url
+            field.widget.attrs['data-current-name'] = os.path.basename(getattr(avatar, 'name', '') or '') or 'Фото'
+            field.widget.attrs['data-current-is-image'] = '1'
 
 
 class ManagerStudentForm(forms.ModelForm):
@@ -112,3 +137,9 @@ class ManagerStudentForm(forms.ModelForm):
         if commit:
             user.save()
         return user
+
+
+class ActiveUserPasswordResetForm(PasswordResetForm):
+    def get_users(self, email):
+        users = super().get_users(email)
+        return [user for user in users if getattr(user, 'is_active', False)]
