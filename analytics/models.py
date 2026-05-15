@@ -250,6 +250,8 @@ class ReportExport(models.Model):
 class BackupRecord(models.Model):
     class Status(models.TextChoices):
         CREATED = 'CREATED', 'Создано'
+        RESTORING = 'RESTORING', 'Восстановление'
+        SUCCESS = 'SUCCESS', 'Успешно'
         FAILED = 'FAILED', 'Ошибка'
         DELETED = 'DELETED', 'Удалено'
 
@@ -285,6 +287,10 @@ class BackupRecord(models.Model):
         max_length=128,
         blank=True,
         verbose_name='Контрольная сумма'
+    )
+    error_message = models.TextField(
+        blank=True,
+        verbose_name='Сообщение об ошибке'
     )
 
     class Meta:

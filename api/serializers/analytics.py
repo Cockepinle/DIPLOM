@@ -203,5 +203,6 @@ class BackupRecordSerializer(serializers.ModelSerializer):
             'file_path',
             'size_bytes',
             'checksum',
+            'error_message',
         ]
         read_only_fields = ['created_by', 'created_at']

@@ -315,7 +315,7 @@ class BackupRecordViewSet(BaseModelViewSet):
         normalized_path, temp_path = self._ensure_utf8_json(file_path)
         try:
             call_command('migrate', interactive=False, verbosity=0)
-            call_command('flush', interactive=False, verbosity=0)
+            call_command('flush', interactive=False, verbosity=0, inhibit_post_migrate=True)
             call_command('loaddata', str(normalized_path), verbosity=0)
         finally:
             if temp_path:
@@ -323,6 +323,12 @@ class BackupRecordViewSet(BaseModelViewSet):
                     Path(temp_path).unlink(missing_ok=True)
                 except Exception:
                     pass
+
+    def _update_backup_record(self, record_id, defaults):
+        BackupRecord.objects.update_or_create(
+            pk=record_id,
+            defaults=defaults,
+        )
 
     def _issue_restore_tokens(self):
         User = get_user_model()
@@ -378,13 +384,39 @@ class BackupRecordViewSet(BaseModelViewSet):
                 {'error': {'message': 'Файл резервной копии не найден.'}},
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+        record.status = BackupRecord.Status.RESTORING
+        record.error_message = ''
+        record.save(update_fields=['status', 'error_message'])
+        record_id = record.id
+        defaults = {
+            'created_by_id': record.created_by_id,
+            'status': BackupRecord.Status.FAILED,
+            'file_path': record.file_path,
+            'size_bytes': record.size_bytes,
+            'checksum': record.checksum,
+            'error_message': '',
+        }
+
         try:
             self._restore_from_file(file_path)
         except Exception as exc:  # noqa: BLE001 - return useful message
+            defaults.update(
+                status=BackupRecord.Status.FAILED,
+                error_message=str(exc),
+            )
+            self._update_backup_record(record_id, defaults)
             return Response(
                 {'error': {'message': f'Ошибка восстановления: {exc}'}},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+        defaults.update(
+            status=BackupRecord.Status.SUCCESS,
+            error_message='',
+        )
+        self._update_backup_record(record_id, defaults)
+
         payload = {'detail': 'Восстановление выполнено.'}
         payload.update(self._issue_restore_tokens())
         return Response(payload)
@@ -410,7 +442,7 @@ class BackupRecordViewSet(BaseModelViewSet):
         checksum = self._hash_file(file_path)
         record = BackupRecord.objects.create(
             created_by=request.user,
-            status=BackupRecord.Status.CREATED,
+            status=BackupRecord.Status.RESTORING,
             file_path=rel_path,
             size_bytes=size_bytes,
             checksum=checksum,
@@ -419,11 +451,16 @@ class BackupRecordViewSet(BaseModelViewSet):
             self._restore_from_file(file_path)
         except Exception as exc:  # noqa: BLE001 - return useful message
             record.status = BackupRecord.Status.FAILED
-            record.save(update_fields=['status'])
+            record.error_message = str(exc)
+            record.save(update_fields=['status', 'error_message'])
             return Response(
                 {'error': {'message': f'Ошибка восстановления: {exc}'}},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+        record.status = BackupRecord.Status.SUCCESS
+        record.error_message = ''
+        record.save(update_fields=['status', 'error_message'])
         serializer = self.get_serializer(record)
         payload = serializer.data
         payload.update(self._issue_restore_tokens())

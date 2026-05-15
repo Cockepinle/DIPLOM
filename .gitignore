@@ -17,3 +17,11 @@ media/
 *.ttf
 docs/
 
+
+node_modules/
+*.pyc
+__pycache__/
+data.json
+data_utf8.json
+media/backups/
+
